@@ -1,0 +1,119 @@
+#!/bin/clojure
+; -*-Clojure-*-
+(require '[clojure.string :as str])
+(use '[clojure.java.shell :only [sh]])
+(import 'java.lang.Runtime)
+
+
+(def fore "%{F#FFFFFF}")
+(def back "%{B#222222}")
+
+
+(defn getwm []
+   (second
+    (str/split
+     (first
+      (str/split
+       (:out (sh "wmctrl" "-m"))
+       #"\n"))
+     #"\s")))
+
+
+                                        ;ruby stuff
+
+
+(defn makebutton
+  [message actions]
+  nil)
+
+
+;; def makebutton(message, actions)
+;;   #button is index + 1
+;;   #1 to 7: left, middle, right, scroll up, scroll down, hover enter, hover leave
+;;   "%{A1:" + actions[0] + ":} " + message +
+;;     " %{A}" #one for each
+;; end
+
+
+(defn getdesktoplist []
+  (def base
+    (:out
+     (sh "wmctrl" "-d")))
+  (map
+   #(str/split % #"\s")
+   (str/split base #"\n")))
+
+
+(defn getwindows [desktop] ;desktop is one line of the output of wmctrl -d
+  (:out
+   (sh "/home/l-acs/.scripts/window/act.sh" "--getwindowsfordesktop"
+       (str
+        (get (vec desktop) 0)))))
+
+(defn isactive? [desktop]
+  (= "*" (get (vec desktop) 2)))
+
+(defn haswindows? [desktop]
+  (not (str/blank? (getwindows desktop))))
+
+(defn getname [desktop]
+  (get (vec desktop) 13))
+
+
+
+;; def bspwm_lemonbar_desktops
+;;   (getdesktoplist "bspwm").each_with_index.map{
+;;     |name, index|  makebutton(name, ["wmctrl -s " + (index).to_s])
+;;   } * " "
+;; end
+
+
+;; #todo refactor buttonmaking
+
+
+;; #music
+;; def mpd_out
+;;   %x< mpc | head -n 1>.chomp +
+;;     makebutton("prev", ["mpc prev"]) +
+;;     makebutton("toggle", ["mpc toggle"]) +
+;;     makebutton("next", ["mpc next"])
+  
+
+
+;; end
+
+;; def date
+;;   %x<date "+%A, %B %-d, %Y - %I:%M%P">.chomp
+;; end
+
+
+
+
+
+
+
+;; puts fore + back + "%{l}" + bspwm_lemonbar_desktops + "%{c}" + mpd_out + "%{r}" + date + "    "
+
+
+
+;(println (getwm))
+
+
+(def desks (getdesktoplist))
+
+(println
+ fore back
+ (map
+  (fn [d]
+    (list
+     (haswindows? d)
+     (isactive? d)
+     (getname d)))
+  
+  desks))
+
+
+
+
+
+(shutdown-agents) ;without this it hangssss
