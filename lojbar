@@ -8,6 +8,35 @@
 (def fore "%{F#FFFFFF}")
 (def back "%{B#222222}")
 
+(defn makebutton [message actions]
+  ;%{A1:action:}%{A3:action:}...%{A}%{A}
+  (def button 0)
+  (str
+   (str/join
+    (map
+     (fn [x]
+       (def button (+ button 1))
+       (str "%{A" button ":" x ":}"))
+     actions)
+    )
+   message
+   (str/join
+    (map
+     (fn [x]
+       (str "%{A}")) actions))))
+
+
+
+
+(defn music []
+  (str
+   (makebutton "  <  " '("mpc prev" "b" "mpc seek 0"))
+   (makebutton
+    (first (str/split (:out (sh "mpc" "status")) #"\n"))
+    '("mpc toggle" "mpc toggle" "mpc toggle" "mpc volume +5" "mpc volume -5"))
+   (makebutton "  >  " '("mpc next" "b" "mpc next"))))
+
+
 
 (defn getwm []
    (second
@@ -18,21 +47,6 @@
        #"\n"))
      #"\s")))
 
-
-                                        ;ruby stuff
-
-
-(defn makebutton
-  [message actions]
-  nil)
-
-
-;; def makebutton(message, actions)
-;;   #button is index + 1
-;;   #1 to 7: left, middle, right, scroll up, scroll down, hover enter, hover leave
-;;   "%{A1:" + actions[0] + ":} " + message +
-;;     " %{A}" #one for each
-;; end
 
 
 (defn getdesktoplist []
@@ -60,57 +74,27 @@
   (get (vec desktop) 13))
 
 
-
-;; def bspwm_lemonbar_desktops
-;;   (getdesktoplist "bspwm").each_with_index.map{
-;;     |name, index|  makebutton(name, ["wmctrl -s " + (index).to_s])
-;;   } * " "
-;; end
-
-
-;; #todo refactor buttonmaking
-
-
-;; #music
-;; def mpd_out
-;;   %x< mpc | head -n 1>.chomp +
-;;     makebutton("prev", ["mpc prev"]) +
-;;     makebutton("toggle", ["mpc toggle"]) +
-;;     makebutton("next", ["mpc next"])
-  
-
-
-;; end
-
-;; def date
-;;   %x<date "+%A, %B %-d, %Y - %I:%M%P">.chomp
-;; end
+(defn desktops []
+  (def count 0)
+  (str/join "  "
+   (map
+    (fn [d]
+      (def count (+ count 1))
+      (makebutton d
+                  (list (str "$HOME/.scripts/window/act.sh -f " count) " " (str "$HOME/.scripts/window/act.sh -s " count))))
+    (map getname (getdesktoplist)))))
 
 
 
+(defn date [] (new java.util.Date))
 
-
-
-
-;; puts fore + back + "%{l}" + bspwm_lemonbar_desktops + "%{c}" + mpd_out + "%{r}" + date + "    "
-
-
-
-;(println (getwm))
-
-
-(def desks (getdesktoplist))
 
 (println
  fore back
- (map
-  (fn [d]
-    (list
-     (haswindows? d)
-     (isactive? d)
-     (getname d)))
-  
-  desks))
+ "%{l}   " (desktops)
+ "%{c}"  (music)
+ "%{r}" (date)
+ "   " )
 
 
 
