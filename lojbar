@@ -8,44 +8,40 @@
 (def fore "%{F#FFFFFF}")
 (def back "%{B#222222}")
 
-(defn makebutton [message actions]
-  ;%{A1:action:}%{A3:action:}...%{A}%{A}
-  (def button 0)
-  (str
-   (str/join
-    (map
-     (fn [x]
-       (def button (+ button 1))
-       (str "%{A" button ":" x ":}"))
-     actions)
-    )
-   message
-   (str/join
-    (map
-     (fn [x]
-       (str "%{A}")) actions))))
 
+(defn makebutton [message action button]
+  (str "%{A" button ":" action ":}" message "%{A}"))
+
+
+(defn makebuttons [message actions button]
+  ;%{A1:action:}%{A3:action:}...%{A}%{A}
+  (if (empty? actions)
+    message
+    (makebuttons
+     (makebutton message (first actions) button)
+     (rest actions)
+     (+ button 1))))
 
 
 
 (defn music []
   (str
-   (makebutton "  <  " '("mpc prev" "b" "mpc seek 0"))
-   (makebutton
+   (makebuttons "  <  " '("mpc prev" "b" "mpc seek 0") 1)
+   (makebuttons
     (first (str/split (:out (sh "mpc" "status")) #"\n"))
-    '("mpc toggle" "mpc toggle" "mpc toggle" "mpc volume +5" "mpc volume -5"))
-   (makebutton "  >  " '("mpc next" "b" "mpc next"))))
+    '("mpc toggle" "mpc toggle" "mpc toggle" "mpc volume +5" "mpc volume -5") 1)
+   (makebuttons "  >  " '("mpc next" "b" "mpc next") 1)))
 
 
 
 (defn getwm []
-   (second
-    (str/split
-     (first
-      (str/split
-       (:out (sh "wmctrl" "-m"))
-       #"\n"))
-     #"\s")))
+  (second
+   (str/split
+    (first
+     (str/split
+      (:out (sh "wmctrl" "-m"))
+      #"\n"))
+    #"\s")))
 
 
 
@@ -76,14 +72,17 @@
 
 (defn desktops []
   (def count 0)
-  (str/join "  "
-   (map
-    (fn [d]
-      (def count (+ count 1))
-      (makebutton d
-                  (list (str "$HOME/.scripts/window/act.sh -f " count) " " (str "$HOME/.scripts/window/act.sh -s " count))))
-    (map getname (getdesktoplist)))))
-
+  (makebuttons 
+   (str/join 
+    (map
+     (fn [d]
+       (def count (+ count 1))
+       (makebuttons d
+                    (list (str "$HOME/.scripts/window/act.sh -f " count) " " (str "$HOME/.scripts/window/act.sh -s " count)) 1))
+     (map (fn [x] (str " " x " ")) (map getname (getdesktoplist)))))
+   (list "$HOME/.scripts/window/act.sh -f next" "$HOME/.scripts/window/act.sh -f prev")
+   4
+   ))
 
 
 (defn date [] (new java.util.Date))
