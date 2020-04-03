@@ -85,7 +85,7 @@
    ))
 
 
-(defn date [] (new java.util.Date))
+(defn date [] (get (vec (str/split (:out (sh "date" "+%A, %B %-d, %Y - %I:%M%P")) #"\n")) 0))
 
 
 (println
@@ -96,7 +96,5 @@
  "   " )
 
 
-
-
-
 (shutdown-agents) ;without this it hangssss
+
