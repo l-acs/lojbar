@@ -5,8 +5,8 @@
 (import 'java.lang.Runtime)
 
 
-(def fore "%{F#FFFFFF}")
-(def back "%{B#222222}")
+(def fore "%{F#DDFFFFFF}")
+(def back "%{B#90111111}")
 
 
 (defn makebutton [message action button]
