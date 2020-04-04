@@ -7,31 +7,23 @@
 
 (def fore "%{F#DDFFFFFF}")
 (def back "%{B#90111111}")
+(def fore-focused "%{F#E9FFFFFF}") ;near-full opacity
+(def back-focused "%{B#E9111111}") ;near-full opacity
 
-
-(defn makebutton [message action button]
-  (str "%{A" button ":" action ":}" message "%{A}"))
-
-
-(defn makebuttons [message actions button]
+(defn makebuttons [message actions buttons]
   ;%{A1:action:}%{A3:action:}...%{A}%{A}
   (if (empty? actions)
     message
-    (makebuttons
-     (makebutton message (first actions) button)
-     (rest actions)
-     (+ button 1))))
+    (makebuttons (str "%{A" (first buttons) ":" (first actions) ":}" message "%{A}") (rest actions) (rest buttons))))
 
 
-
-(defn music []
+(def music
   (str
-   (makebuttons "  <  " '("mpc prev" "b" "mpc seek 0") 1)
+   (makebuttons "  <  " '("mpc prev" "mpc seek 0") (list 1 3))
    (makebuttons
     (first (str/split (:out (sh "mpc" "status")) #"\n"))
-    '("mpc toggle" "mpc toggle" "mpc toggle" "mpc volume +5" "mpc volume -5") 1)
-   (makebuttons "  >  " '("mpc next" "b" "mpc next") 1)))
-
+    '("mpc toggle" "mpc toggle" "mpc volume +5" "mpc volume -5") (list 1 3 4 5))
+   (makebuttons "  >  " '("mpc next" "mpc next") (list 1 3))))
 
 
 (defn getwm []
@@ -44,8 +36,7 @@
     #"\s")))
 
 
-
-(defn getdesktoplist []
+(defn getdesktoplist [] 
   (def base
     (:out
      (sh "wmctrl" "-d")))
@@ -54,11 +45,13 @@
    (str/split base #"\n")))
 
 
+(defn getindex [desktop]
+  (str (get (vec desktop) 0)))
+
 (defn getwindows [desktop] ;desktop is one line of the output of wmctrl -d
   (:out
    (sh "/home/l-acs/.scripts/window/act.sh" "--getwindowsfordesktop"
-       (str
-        (get (vec desktop) 0)))))
+       (getindex desktop))))
 
 (defn isactive? [desktop]
   (= "*" (get (vec desktop) 2)))
@@ -70,30 +63,29 @@
   (get (vec desktop) 13))
 
 
-(defn desktops []
-  (def count 0)
-  (makebuttons 
-   (str/join 
-    (map
-     (fn [d]
-       (def count (+ count 1))
-       (makebuttons d
-                    (list (str "$HOME/.scripts/window/act.sh -f " count) " " (str "$HOME/.scripts/window/act.sh -s " count)) 1))
-     (map (fn [x] (str " " x " ")) (map getname (getdesktoplist)))))
-   (list "$HOME/.scripts/window/act.sh -f next" "$HOME/.scripts/window/act.sh -f prev")
-   4
-   ))
+(defn makedesktopbutton [d]
+  (if (isactive? d)
+    (def out (str fore-focused back-focused))
+    (def out (str fore back)))
+  (def index (if (= (getwm) "CWM") (getindex d) (str (+ (read-string (getindex d)) 1))))
+  (str out
+       (makebuttons
+        (str "  " (getname d) "  ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh -f " index)) (list 3 1))))
+
+(def desktops
+  (str/join (map makedesktopbutton (getdesktoplist))))
 
 
-(defn date [] (get (vec (str/split (:out (sh "date" "+%A, %B %-d, %Y - %I:%M%P")) #"\n")) 0))
+(def date (get (vec (str/split (:out (sh "date" "+%A, %B %-d, %Y - %I:%M%P")) #"\n")) 0))
 
 
-(println
+(print
  fore back
- "%{l}   " (desktops)
- "%{c}"  (music)
- "%{r}" (date)
- "   " )
+ "%{l}   " desktops
+ fore back
+ "%{c}" music
+ fore back
+ "%{r}" date  "   ")
 
 
 (shutdown-agents) ;without this it hangssss
