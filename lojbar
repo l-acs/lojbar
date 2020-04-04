@@ -72,9 +72,9 @@
        (makebuttons
         (str "  " (getname d) "  ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh -f " index)) (list 3 1))))
 
-(def desktops
-  (str/join (map makedesktopbutton (getdesktoplist))))
-
+;; (def desktops
+;;   (str/join (map makedesktopbutton (getdesktoplist))))
+(def desktops (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("$HOME/.scripts/window/act.sh -f next" "$HOME/.scripts/window/act.sh -f prev") '(4 5)))
 
 (def date (get (vec (str/split (:out (sh "date" "+%A, %B %-d, %Y - %I:%M%P")) #"\n")) 0))
 
