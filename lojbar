@@ -76,7 +76,7 @@
 ;;   (str/join (map makedesktopbutton (getdesktoplist))))
 (def desktops (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("$HOME/.scripts/window/act.sh -f next" "$HOME/.scripts/window/act.sh -f prev") '(4 5)))
 
-(def date (nth (str/split (:out (sh "date" "+%A, %B %-d, %Y - %I:%M%P")) #"\n") 0))
+(def date (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %I:%M%P")) #"\n") 0))
 
 (def battery
   (str
@@ -87,11 +87,11 @@
 
 (print
  fore back
- "%{l}   " desktops
+ "%{l}  " desktops
  fore back
  "%{c}" music
  fore back
- "%{r}" battery " " date  "   ")
+ "%{r}" battery " " date  "  ")
 
 
 (shutdown-agents) ;without this it hangssss
