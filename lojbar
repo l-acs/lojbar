@@ -11,6 +11,11 @@
 (def fore-focused "%{F#E9FFFFFF}") ;near-full opacity
 (def back-focused "%{B#E9111111}") ;near-full opacity
 
+(defn focus [bool]
+  (if bool
+    (str fore-focused back-focused)
+    (str fore back)))
+
 (defn makebuttons [message actions buttons]
   ;%{A1:action:}%{A3:action:}...%{A}%{A}
   (if (empty? actions)
@@ -65,13 +70,11 @@
 
 
 (defn makedesktopbutton [d]
-  (if (isactive? d)
-    (def out (str fore-focused back-focused))
-    (def out (str fore back)))
   (def index (if (= (getwm) "CWM") (getindex d) (str (+ (read-string (getindex d)) 1))))
-  (str out
-       (makebuttons
-        (str " " (getname d) " ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh -f " index)) (list 3 1))))
+  (str
+   (focus (isactive? d))
+   (makebuttons
+    (str " " (getname d) " ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh -f " index)) (list 3 1))))
 
 ;; (def desktops
 ;;   (str/join (map makedesktopbutton (getdesktoplist))))
@@ -91,11 +94,11 @@
 
 
 (print
- fore back
+ (focus false)
  "%{l}  " desktops
- fore back
+ (focus false)
  "%{c}" music
- fore back
+ (focus false)
  "%{r}" (battery) " " date  "  ")
 
 
