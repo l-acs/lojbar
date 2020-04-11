@@ -78,6 +78,12 @@
 
 (def date (nth (str/split (:out (sh "date" "+%A, %B %-d, %Y - %I:%M%P")) #"\n") 0))
 
+(def battery
+  (str
+   (str/trim-newline (slurp "/sys/class/power_supply/BAT0/capacity"))
+   "% - "
+   (str/trim-newline (slurp "/sys/class/power_supply/BAT0/status"))))
+
 
 (print
  fore back
@@ -85,7 +91,7 @@
  fore back
  "%{c}" music
  fore back
- "%{r}" date  "   ")
+ "%{r}" battery " " date  "   ")
 
 
 (shutdown-agents) ;without this it hangssss
