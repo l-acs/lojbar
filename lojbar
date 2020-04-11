@@ -46,7 +46,7 @@
 
 
 (defn getindex [desktop]
-  (str (get (vec desktop) 0)))
+  (str (nth desktop 0)))
 
 (defn getwindows [desktop] ;desktop is one line of the output of wmctrl -d
   (:out
@@ -54,13 +54,13 @@
        (getindex desktop))))
 
 (defn isactive? [desktop]
-  (= "*" (get (vec desktop) 2)))
+  (= "*" (nth desktop 2)))
 
 (defn haswindows? [desktop]
   (not (str/blank? (getwindows desktop))))
 
 (defn getname [desktop]
-  (get (vec desktop) 12))
+  (nth desktop 12))
 
 
 (defn makedesktopbutton [d]
@@ -76,7 +76,7 @@
 ;;   (str/join (map makedesktopbutton (getdesktoplist))))
 (def desktops (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("$HOME/.scripts/window/act.sh -f next" "$HOME/.scripts/window/act.sh -f prev") '(4 5)))
 
-(def date (get (vec (str/split (:out (sh "date" "+%A, %B %-d, %Y - %I:%M%P")) #"\n")) 0))
+(def date (nth (str/split (:out (sh "date" "+%A, %B %-d, %Y - %I:%M%P")) #"\n") 0))
 
 
 (print
