@@ -1,6 +1,7 @@
 #!/bin/clojure
 ; -*-Clojure-*-
 (require '[clojure.string :as str])
+(require '[clojure.java.io :as io])
 (use '[clojure.java.shell :only [sh]])
 (import 'java.lang.Runtime)
 
@@ -78,11 +79,15 @@
 
 (def date (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %I:%M%P")) #"\n") 0))
 
-(def battery
-  (str
-   (str/trim-newline (slurp "/sys/class/power_supply/BAT0/capacity"))
-   "% - "
-   (str/trim-newline (slurp "/sys/class/power_supply/BAT0/status"))))
+(defn battery []
+  (def cap "/sys/class/power_supply/BAT0/capacity")
+  (def status "/sys/class/power_supply/BAT0/status")
+  (if (and (.exists (io/file cap)) (.exists (io/file status)))
+    (str
+     (str/trim-newline (slurp cap))
+     "% - "
+     (str/trim-newline (slurp status)))
+    ""))
 
 
 (print
@@ -91,7 +96,7 @@
  fore back
  "%{c}" music
  fore back
- "%{r}" battery " " date  "  ")
+ "%{r}" (battery) " " date  "  ")
 
 
 (shutdown-agents) ;without this it hangssss
