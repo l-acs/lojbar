@@ -77,7 +77,7 @@
 ;;   (str/join (map makedesktopbutton (getdesktoplist))))
 (def desktops (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("$HOME/.scripts/window/act.sh -f next" "$HOME/.scripts/window/act.sh -f prev") '(4 5)))
 
-(def date (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %I:%M%P")) #"\n") 0))
+(def date (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
 
 (defn battery []
   (def cap "/sys/class/power_supply/BAT0/capacity")
