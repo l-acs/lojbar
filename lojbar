@@ -15,10 +15,15 @@
 (def bat0status "/sys/class/power_supply/BAT0/status")
 
 
-(defn focus [bool]
-  (if bool
+(defn focus [input]
+  (if (= input true)
     (str "%{F#" opaque f-base "}%{B#" opaque b-base "}")
-    (str "%{F#" mid f-base "}%{B#" transparent b-base "}")))
+    (if (= input false) ;normal unfocused
+      (str "%{F#" mid f-base "}%{B#" transparent b-base "}")
+      (if (= input "urgent")
+        "something"
+        (if (= input "dimmed") ;lowest focus
+          (str "%{F#" transparent f-base "}%{B#" transparent b-base "}"))))))
 
 (defn makebuttons [message actions buttons]
   ;%{A1:action:}%{A3:action:}...%{A}%{A}
@@ -72,13 +77,14 @@
 (defn getname [desktop]
   (nth desktop 12))
 
-
 (defn makedesktopbutton [d]
   (def index (if (= (getwm) "CWM") (getindex d) (str (+ (read-string (getindex d)) 1))))
   (str
-   (focus (isactive? d))
+   (focus 
+    (if (isactive? d) true (if (haswindows? d) false "dimmed")))
    (makebuttons
     (str " " (getname d) " ") (list (str "act.sh -s " index) (str "act.sh -f " index)) (list 3 1))))
+
 
 (def desktops (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("act.sh -f next" "act.sh -f prev") '(4 5)))
 
@@ -99,4 +105,4 @@
  "%{r}" (battery bat0cap bat0status 25) (focus false) " " date  "  ")
 
 
-(shutdown-agents) ;without this it hangssss
+(shutdown-agents) ;without this it hangs
