@@ -5,19 +5,20 @@
 (use '[clojure.java.shell :only [sh]])
 (import 'java.lang.Runtime)
 
+(def f-base "FFFFFF")
+(def b-base "111111")
+(def transparent "90")
+(def mid "DD")
+(def opaque "E9")
 
-(def fore "%{F#DDFFFFFF}")
-(def back "%{B#90111111}")
-(def fore-focused "%{F#E9FFFFFF}") ;near-full opacity
-(def back-focused "%{B#E9111111}") ;near-full opacity
 (def bat0cap "/sys/class/power_supply/BAT0/capacity")
 (def bat0status "/sys/class/power_supply/BAT0/status")
 
 
 (defn focus [bool]
   (if bool
-    (str fore-focused back-focused)
-    (str fore back)))
+    (str "%{F#" opaque f-base "}%{B#" opaque b-base "}")
+    (str "%{F#" mid f-base "}%{B#" transparent b-base "}")))
 
 (defn makebuttons [message actions buttons]
   ;%{A1:action:}%{A3:action:}...%{A}%{A}
