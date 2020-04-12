@@ -60,7 +60,7 @@
 
 (defn getwindows [desktop] ;desktop is one line of the output of wmctrl -d
   (:out
-   (sh "/home/l-acs/.scripts/window/act.sh" "--getwindowsfordesktop"
+   (sh "act.sh" "--getwindowsfordesktop"
        (getindex desktop))))
 
 (defn isactive? [desktop]
@@ -78,9 +78,9 @@
   (str
    (focus (isactive? d))
    (makebuttons
-    (str " " (getname d) " ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh -f " index)) (list 3 1))))
+    (str " " (getname d) " ") (list (str "act.sh -s " index) (str "act.sh -f " index)) (list 3 1))))
 
-(def desktops (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("$HOME/.scripts/window/act.sh -f next" "$HOME/.scripts/window/act.sh -f prev") '(4 5)))
+(def desktops (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("act.sh -f next" "act.sh -f prev") '(4 5)))
 
 (def date (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
 
