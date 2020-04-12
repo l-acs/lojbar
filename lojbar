@@ -10,6 +10,9 @@
 (def back "%{B#90111111}")
 (def fore-focused "%{F#E9FFFFFF}") ;near-full opacity
 (def back-focused "%{B#E9111111}") ;near-full opacity
+(def bat0cap "/sys/class/power_supply/BAT0/capacity")
+(def bat0status "/sys/class/power_supply/BAT0/status")
+
 
 (defn focus [bool]
   (if bool
@@ -76,31 +79,23 @@
    (makebuttons
     (str " " (getname d) " ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh -f " index)) (list 3 1))))
 
-;; (def desktops
-;;   (str/join (map makedesktopbutton (getdesktoplist))))
 (def desktops (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("$HOME/.scripts/window/act.sh -f next" "$HOME/.scripts/window/act.sh -f prev") '(4 5)))
 
 (def date (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
 
-(defn battery []
-  (def cap "/sys/class/power_supply/BAT0/capacity")
-  (def status "/sys/class/power_supply/BAT0/status")
+(defn battery [cap status threshold]
   (if (and (.exists (io/file cap)) (.exists (io/file status)))
-    (str
-     (str/trim-newline (slurp cap))
-     "% - "
-     (str/trim-newline (slurp status)))
-    ""))
-
+     (if (= "Charging" (str/trim-newline (slurp status)))
+       (str (focus false) " " (str/trim-newline (slurp cap)) "%" " - charging")
+       (str (if (< (read-string (str/trim-newline (slurp cap))) threshold)
+              (focus true)
+              (focus false))
+            " " (str/trim-newline (slurp cap)) "% "))))
 
 (print
- (focus false)
- "%{l}  " desktops
- (focus false)
- "%{c}" music
- (focus false)
- "%{r}" (battery) " " date  "  ")
+ (focus false) "%{l}  " desktops
+ (focus false) "%{c}" music
+ "%{r}" (battery bat0cap bat0status 25) (focus false) " " date  "  ")
 
 
 (shutdown-agents) ;without this it hangssss
-
