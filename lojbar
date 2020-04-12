@@ -8,7 +8,7 @@
 (def f-base "FFFFFF")
 (def b-base "111111")
 (def transparent "90")
-(def mid "DD")
+(def mid "C4")
 (def opaque "E9")
 
 (def bat0cap "/sys/class/power_supply/BAT0/capacity")
