@@ -32,7 +32,7 @@
     (makebuttons (str "%{A" (first buttons) ":" (first actions) ":}" message "%{A}") (rest actions) (rest buttons))))
 
 
-(def music
+(defn music []
   (str
    (makebuttons "  <  " '("mpc prev" "mpc seek 0") (list 1 3))
    (makebuttons
@@ -86,9 +86,9 @@
     (str " " (getname d) " ") (list (str "act.sh -s " index) (str "act.sh --capturefocuscapture " index) (str "act.sh --showthumbnail " index)) (list 3 1 6))))
 
 
-(def desktops (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("act.sh --capturefocuscapture next" "act.sh --capturefocuscapture prev") '(4 5)))
+(defn desktops [] (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("act.sh --capturefocuscapture next" "act.sh --capturefocuscapture prev") '(4 5)))
 
-(def date (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
+(defn date [] (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
 
 (defn battery [cap status threshold]
   (if (and (.exists (io/file cap)) (.exists (io/file status)))
@@ -101,9 +101,9 @@
      "" ))
 
 (print
- (focus false) "%{l}  " desktops
- (focus false) "%{c}" music
- "%{r}" (battery bat0cap bat0status 25) (focus false) " " date  "  ")
+ (focus false) "%{l}  " (desktops)
+ (focus false) "%{c}" (music)
+ "%{r}" (battery bat0cap bat0status 25) (focus false) " " (date)  "  ")
 
 
 (shutdown-agents) ;without this it hangs
