@@ -65,13 +65,15 @@
 
 (defn getwindows [desktop] ;desktop is one line of the output of wmctrl -d
   (:out
-   (sh "act.sh" "--getwindowsfordesktop"
-       (getindex desktop))))
+   (sh "xdotool" "search" "--desktop" ;"$HOME/.scripts/window/act.sh" "--getwindowsfordesktop"
+       (getindex desktop)
+       "" ;xdotool only
+       )))
 
 (defn isactive? [desktop]
   (= "*" (nth desktop 2)))
 
-(defn haswindows? [desktop]
+(defn haswindows? [desktop] ;causing problems
   (not (str/blank? (getwindows desktop))))
 
 (defn getname [desktop] ;fails for cwm
@@ -83,10 +85,10 @@
    (focus 
     (if (isactive? d) true (if (haswindows? d) false "dimmed")))
    (makebuttons
-    (str " " (getname d) " ") (list (str "act.sh -s " index) (str "act.sh --capturefocuscapture " index) (str "act.sh --showthumbnail " index)) (list 3 1 6))))
+    (str " " (getname d) " ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh --capturefocuscapture " index) (str "$HOME/.scripts/window/act.sh --showthumbnail " index)) (list 3 1 6))))
 
 
-(defn desktops [] (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("act.sh --capturefocuscapture next" "act.sh --capturefocuscapture prev") '(4 5)))
+(defn desktops [] (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("$HOME/.scripts/window/act.sh --capturefocuscapture next" "$HOME/.scripts/window/act.sh --capturefocuscapture prev") '(4 5)))
 
 (defn date [] (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
 
@@ -102,12 +104,12 @@
 
 
 
-(defn auto-update-atom!
-  [a time f & args]
-        (future 
-          (while true
-            (Thread/sleep time)
-            (reset! a (f args)))))
+;; (defn auto-update-atom!
+;;   [a time f & args]
+;;         (future 
+;;           (while true
+;;             (Thread/sleep time)
+;;             (reset! a (f args)))))
 
 
 (def d (atom (desktops)))
@@ -115,11 +117,16 @@
 (def b (atom (battery bat0cap bat0status 25)))
 (def t (atom (date)))
 
+(future (while true (Thread/sleep 100) (reset! d (desktops))))
+(future (while true (Thread/sleep 500) (reset! m (music))))
+(future (while true (Thread/sleep 5000) (reset! b (battery bat0cap bat0status 25))))
+(future (while true (Thread/sleep 1000) (reset! t (date))))
 
-(auto-update-atom! d 100 desktops)
-(auto-update-atom! m 500 music)
-(auto-update-atom! b 5000 battery bat0cap bat0status 25)
-(auto-update-atom! t 1000 date)
+
+;; (auto-update-atom! d 100 desktops)
+;; (auto-update-atom! m 500 music)
+;; (auto-update-atom! b 5000 battery bat0cap bat0status 25)
+;; (auto-update-atom! t 1000 date)
 
 (defn spew []
   (println
