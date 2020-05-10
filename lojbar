@@ -100,10 +100,38 @@
             " " (str/trim-newline (slurp cap)) "% "))
      "" ))
 
-(print
- (focus false) "%{l}  " (desktops)
- (focus false) "%{c}" (music)
- "%{r}" (battery bat0cap bat0status 25) (focus false) " " (date)  "  ")
 
 
+(defn auto-update-atom!
+  [a time f & args]
+        (future 
+          (while true
+            (Thread/sleep time)
+            (reset! a (f args)))))
+
+
+(def d (atom (desktops)))
+(def m (atom (music)))
+(def b (atom (battery bat0cap bat0status 25)))
+(def t (atom (date)))
+
+
+(auto-update-atom! d 100 desktops)
+(auto-update-atom! m 500 music)
+(auto-update-atom! b 5000 battery bat0cap bat0status 25)
+(auto-update-atom! t 1000 date)
+
+(defn spew []
+  (println
+   (focus false) "%{l}  " @d
+   (focus false) "%{c}" @m
+   "%{r}" @b (focus false) " " @t  "  "))
+
+
+(while true
+  (Thread/sleep 100)
+  (spew))
+
+
+  
 (shutdown-agents) ;without this it hangs
