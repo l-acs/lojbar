@@ -14,6 +14,19 @@
 (def bat0cap "/sys/class/power_supply/BAT0/capacity")
 (def bat0status "/sys/class/power_supply/BAT0/status")
 
+(defn remove-back-to-back [lst item]
+  (defn helper [lst item prev]
+    (if (empty? lst)
+      '()
+      (if (= prev (first lst) item)
+        (helper (rest lst) item item)
+        (cons (first lst) (helper (rest lst) item (first lst))))))
+  (helper lst item ""))
+
+(defn squeeze [string chr] ;for parsing text alignment of wmctrl output, mostly
+  (str/join 
+   (remove-back-to-back (str/split string #"") chr)))
+
 
 (defn focus [input]
   (if (= input true)
@@ -57,7 +70,7 @@
      (sh "wmctrl" "-d")))
   (map
    #(str/split % #"\s")
-   (str/split base #"\n")))
+   (map (fn [x] (squeeze x " ")) (str/split (:out (sh "wmctrl" "-d")) #"\n"))))
 
 
 (defn getindex [desktop]
@@ -71,13 +84,13 @@
        )))
 
 (defn isactive? [desktop]
-  (= "*" (nth desktop 2)))
+  (= "*" (nth desktop 1)))
 
 (defn haswindows? [desktop] ;causing problems
   (not (str/blank? (getwindows desktop))))
 
-(defn getname [desktop] ;fails for cwm
-  (nth desktop 12))
+(defn getname [desktop] 
+  (nth desktop 8))
 
 (defn makedesktopbutton [d]
   (def index (if (= (getwm) "CWM") (getindex d) (str (+ (read-string (getindex d)) 1))))
@@ -103,15 +116,6 @@
      "" ))
 
 
-
-;; (defn auto-update-atom!
-;;   [a time f & args]
-;;         (future 
-;;           (while true
-;;             (Thread/sleep time)
-;;             (reset! a (f args)))))
-
-
 (def d (atom (desktops)))
 (def m (atom (music)))
 (def b (atom (battery bat0cap bat0status 25)))
@@ -121,12 +125,6 @@
 (future (while true (Thread/sleep 500) (reset! m (music))))
 (future (while true (Thread/sleep 5000) (reset! b (battery bat0cap bat0status 25))))
 (future (while true (Thread/sleep 1000) (reset! t (date))))
-
-
-;; (auto-update-atom! d 100 desktops)
-;; (auto-update-atom! m 500 music)
-;; (auto-update-atom! b 5000 battery bat0cap bat0status 25)
-;; (auto-update-atom! t 1000 date)
 
 (defn spew []
   (println
