@@ -73,35 +73,48 @@
    (map (fn [x] (squeeze x " ")) (str/split (:out (sh "wmctrl" "-d")) #"\n"))))
 
 
-(defn getindex [desktop]
-  (str (nth desktop 0)))
+(defn getindex [desktop wm]
+  (if (= wm "CWM")
+    (str (nth desktop 0)))
+    (str (+ (read-string (str (nth desktop 0))) 1)))
 
-(defn getwindows [desktop] ;desktop is one line of the output of wmctrl -d
+
+(defn getwindows [desktop wm] ;desktop is one line of the output of wmctrl -d
   (:out
    (sh "xdotool" "search" "--desktop" ;"$HOME/.scripts/window/act.sh" "--getwindowsfordesktop"
-       (getindex desktop)
+       (getindex desktop wm)
        "" ;xdotool only
        )))
 
 (defn isactive? [desktop]
   (= "*" (nth desktop 1)))
 
-(defn haswindows? [desktop] ;causing problems
-  (not (str/blank? (getwindows desktop))))
+(defn haswindows? [desktop wm] ;causing problems
+  (not (str/blank? (getwindows desktop wm))))
 
-(defn getname [desktop] 
-  (nth desktop 8))
+(defn getname [desktop wm]
+  (if (= wm "bspwm")
+    (nth desktop 8)
+    (if (= wm "CWM")
+      (nth desktop 9)
+      "undetermined")))
+   
 
-(defn makedesktopbutton [d]
-  (def index (if (= (getwm) "CWM") (getindex d) (str (+ (read-string (getindex d)) 1))))
+
+(defn makedesktopbutton [d wm]
+  (def index (getindex d wm))
   (str
    (focus 
-    (if (isactive? d) true (if (haswindows? d) false "dimmed")))
+    (if (isactive? d) true (if (haswindows? d wm) false "dimmed")))
    (makebuttons
-    (str " " (getname d) " ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh --capturefocuscapture " index) (str "$HOME/.scripts/window/act.sh --showthumbnail " index)) (list 3 1 6))))
+    (str " " (getname d wm) " ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh --capturefocuscapture " index) (str "$HOME/.scripts/window/act.sh --showthumbnail " index)) (list 3 1 6))))
 
 
-(defn desktops [] (makebuttons (str/join (map makedesktopbutton (getdesktoplist))) '("$HOME/.scripts/window/act.sh --capturefocuscapture next" "$HOME/.scripts/window/act.sh --capturefocuscapture prev") '(4 5)))
+(defn desktops [wm]
+  (makebuttons
+   (str/join
+    (map #(makedesktopbutton % wm) (getdesktoplist)))
+   '("$HOME/.scripts/window/act.sh --capturefocuscapture next" "$HOME/.scripts/window/act.sh --capturefocuscapture prev") '(4 5)))
 
 (defn date [] (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
 
@@ -116,12 +129,13 @@
      "" ))
 
 
-(def d (atom (desktops)))
+(def wm (getwm))
+(def d (atom (desktops wm)))
 (def m (atom (music)))
 (def b (atom (battery bat0cap bat0status 25)))
 (def t (atom (date)))
 
-(future (while true (Thread/sleep 100) (reset! d (desktops))))
+(future (while true (Thread/sleep 100) (reset! d (desktops wm))))
 (future (while true (Thread/sleep 500) (reset! m (music))))
 (future (while true (Thread/sleep 5000) (reset! b (battery bat0cap bat0status 25))))
 (future (while true (Thread/sleep 1000) (reset! t (date))))
