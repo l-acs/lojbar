@@ -62,7 +62,7 @@
    (str/split
     (first
      (str/split
-      (exec "wmctrl" "-m")
+      (exec "wmctrl -m")
       #"\n"))
     #"\s")))
 
@@ -119,7 +119,7 @@
    (str/join dlist)
    '("$HOME/.scripts/window/act.sh --capturefocuscapture next" "$HOME/.scripts/window/act.sh --capturefocuscapture prev") '(4 5)))
 
-(defn date [] (nth (str/split (exec "date +%a, %b %-d %Y - %-I:%M%P") #"\n") 0))
+(defn date [] (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
 
 (defn battery [cap status threshold]
   (if (and (.exists (io/file cap)) (.exists (io/file status)))
@@ -138,10 +138,11 @@
 (def b (atom (battery bat0cap bat0status 25)))
 (def t (atom (date)))
 
+
 (future (while true (Thread/sleep 100) (reset! d (desktops wm))))
 (future (while true (Thread/sleep 500) (reset! m (music))))
 (future (while true (Thread/sleep 5000) (reset! b (battery bat0cap bat0status 25))))
-(future (while true (Thread/sleep 1000) (reset! t (date))))
+(future (while true  (Thread/sleep 1000) (reset! t (date))))
 
 (defn spew []
   (println
