@@ -27,6 +27,9 @@
   (str/join 
    (remove-back-to-back (str/split string #"") chr)))
 
+(defn exec [cmd]
+  (:out 
+   (apply sh (str/split cmd #"\s"))))
 
 (defn focus [input]
   (if (= input true)
@@ -49,7 +52,7 @@
   (str
    (makebuttons "  <  " '("mpc prev" "mpc seek 0") (list 1 3))
    (makebuttons
-    (first (str/split (:out (sh "mpc" "current")) #"\n"))
+    (first (str/split (exec "mpc current") #"\n"))
     '("mpc toggle" "urxvt -e ncmpcpp -s lyrics &" "mpc volume +5" "mpc volume -5") (list 1 3 4 5))
    (makebuttons "  >  " '("mpc next" "mpc next") (list 1 3))))
 
@@ -59,18 +62,15 @@
    (str/split
     (first
      (str/split
-      (:out (sh "wmctrl" "-m"))
+      (exec "wmctrl" "-m")
       #"\n"))
     #"\s")))
 
 
 (defn getdesktoplist [] 
-  (def base
-    (:out
-     (sh "wmctrl" "-d")))
   (map
    #(str/split % #"\s")
-   (map (fn [x] (squeeze x " ")) (str/split (:out (sh "wmctrl" "-d")) #"\n"))))
+   (map (fn [x] (squeeze x " ")) (str/split (exec "wmctrl -d") #"\n"))))
 
 
 (defn getindex [desktop wm]
@@ -119,7 +119,7 @@
    (str/join dlist)
    '("$HOME/.scripts/window/act.sh --capturefocuscapture next" "$HOME/.scripts/window/act.sh --capturefocuscapture prev") '(4 5)))
 
-(defn date [] (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
+(defn date [] (nth (str/split (exec "date +%a, %b %-d %Y - %-I:%M%P") #"\n") 0))
 
 (defn battery [cap status threshold]
   (if (and (.exists (io/file cap)) (.exists (io/file status)))
