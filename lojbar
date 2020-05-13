@@ -82,7 +82,7 @@
 (defn getwindows [desktop wm] ;desktop is one line of the output of wmctrl -d
   (:out
    (sh "xdotool" "search" "--desktop" ;"$HOME/.scripts/window/act.sh" "--getwindowsfordesktop"
-       (getindex desktop wm)
+       (nth desktop 0) ;xdotool counts from 0, so it doesn't vary by WM; otherwise getindex would be better
        "" ;xdotool only
        )))
 
