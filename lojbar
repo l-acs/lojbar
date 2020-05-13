@@ -111,9 +111,12 @@
 
 
 (defn desktops [wm]
+  (def dlist
+    (if (= wm "CWM")
+      (drop 1 (map #(makedesktopbutton % wm) (getdesktoplist)))
+      (map #(makedesktopbutton % wm) (getdesktoplist))))
   (makebuttons
-   (str/join
-    (map #(makedesktopbutton % wm) (getdesktoplist)))
+   (str/join dlist)
    '("$HOME/.scripts/window/act.sh --capturefocuscapture next" "$HOME/.scripts/window/act.sh --capturefocuscapture prev") '(4 5)))
 
 (defn date [] (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
