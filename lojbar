@@ -5,14 +5,8 @@
 (use '[clojure.java.shell :only [sh]])
 (import 'java.lang.Runtime)
 
-(def f-base "FFFFFF")
-(def b-base "111111")
-(def transparent "90")
-(def mid "C4")
-(def opaque "E9")
-
-(def bat0cap "/sys/class/power_supply/BAT0/capacity")
-(def bat0status "/sys/class/power_supply/BAT0/status")
+(def color {:f-base "FFFFFF" :b-base "111111" :none "00" :transparent "90" :mid "C4" :opaque "E9"})
+(def bat {:cap "/sys/class/power_supply/BAT0/capacity" :status "/sys/class/power_supply/BAT0/status" :threshold 25})
 
 (defn remove-back-to-back [lst item]
   (defn helper [lst item prev]
@@ -31,15 +25,17 @@
   (:out 
    (apply sh (str/split cmd #"\s"))))
 
-(defn focus [input]
+(defn focus [input color]
   (if (= input true)
-    (str "%{F#" opaque f-base "}%{B#" opaque b-base "}")
+    (str "%{F#" (color :opaque) (color :f-base) "}%{B#" (color :opaque) (color :b-base) "}")
     (if (= input false) ;normal unfocused
-      (str "%{F#" mid f-base "}%{B#" transparent b-base "}")
+      (str "%{F#" (color :mid) (color :f-base) "}%{B#" (color :transparent) (color :b-base) "}")
       (if (= input "urgent")
         "something"
-        (if (= input "dimmed") ;lowest focus
-          (str "%{F#" transparent f-base "}%{B#" transparent b-base "}"))))))
+        (if (= input "none")
+          (str "%{F#" (color :none) (color :f-base) "}%{B#" (color :none) (color :b-base) "}")
+          (if (= input "dimmed") ;lowest focus
+            (str "%{F#" (color :transparent) (color :f-base) "}%{B#" (color :transparent) (color :b-base) "}")))))))
 
 (defn makebuttons [message actions buttons]
   ;%{A1:action:}%{A3:action:}...%{A}%{A}
@@ -101,59 +97,65 @@
    
 
 
-(defn makedesktopbutton [d wm]
+(defn makedesktopbutton [d wm color]
   (def index (getindex d wm))
   (str
    (focus 
-    (if (isactive? d) true (if (haswindows? d wm) false "dimmed")))
+    (if (isactive? d) true (if (haswindows? d wm) false "dimmed")) color)
    (makebuttons
     (str " " (getname d wm) " ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh --capturefocuscapture " index) (str "$HOME/.scripts/window/act.sh --showthumbnail " index)) (list 3 1 6))))
 
 
-(defn desktops [wm]
+(defn desktops [wm color]
   (def dlist
     (if (= wm "CWM")
-      (drop 1 (map #(makedesktopbutton % wm) (getdesktoplist)))
-      (map #(makedesktopbutton % wm) (getdesktoplist))))
+      (drop 1 (map #(makedesktopbutton % wm color) (getdesktoplist)))
+      (map #(makedesktopbutton % wm color) (getdesktoplist))))
   (makebuttons
    (str/join dlist)
    '("$HOME/.scripts/window/act.sh --capturefocuscapture next" "$HOME/.scripts/window/act.sh --capturefocuscapture prev") '(4 5)))
 
 (defn date [] (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
 
-(defn battery [cap status threshold]
-  (if (and (.exists (io/file cap)) (.exists (io/file status)))
-     (if (= "Charging" (str/trim-newline (slurp status)))
-       (str (focus false) " " (str/trim-newline (slurp cap)) "%" " - charging")
-       (str (if (< (read-string (str/trim-newline (slurp cap))) threshold)
-              (focus true)
-              (focus false))
-            " " (str/trim-newline (slurp cap)) "% "))
+(defn battery [info color]
+  (if (and (.exists (io/file (info :cap))) (.exists (io/file (info :status))))
+     (if (= "Charging" (str/trim-newline (slurp (info :status))))
+       (str (focus false color) " " (str/trim-newline (slurp (info :cap))) "%" " - charging")
+       (str (if (< (read-string (str/trim-newline (slurp (info :cap)))) (info :threshold))
+              (focus true color)
+              (focus false color))
+            " " (str/trim-newline (slurp (info :cap))) "% "))
      "" ))
 
 
+; volume module:
+; pactl subscribe | while read line; do echo $line | grep -q sink && volume query | sed q; done 
+
+
+
+
 (def wm (getwm))
-(def d (atom (desktops wm)))
+(def d (atom (desktops wm color)))
 (def m (atom (music)))
-(def b (atom (battery bat0cap bat0status 25)))
+(def b (atom (battery bat color)))
 (def t (atom (date)))
 
 
-(future (while true (Thread/sleep 100) (reset! d (desktops wm))))
+(future (while true (Thread/sleep 100) (reset! d (desktops wm color))))
 (future (while true (Thread/sleep 500) (reset! m (music))))
-(future (while true (Thread/sleep 5000) (reset! b (battery bat0cap bat0status 25))))
+(future (while true (Thread/sleep 5000) (reset! b (battery bat color))))
 (future (while true  (Thread/sleep 1000) (reset! t (date))))
 
-(defn spew []
+(defn spew [color]
   (println
-   (focus false) "%{l}  " @d
-   (focus false) "%{c}" @m
-   "%{r}" @b (focus false) " " @t  "  "))
+   (focus false color) "%{l}  " @d
+   (focus false color) "%{c}" @m
+   "%{r}" @b (focus false color) " " @t  "  "))
 
 
 (while true
   (Thread/sleep 100)
-  (spew))
+  (spew color))
 
 
   
