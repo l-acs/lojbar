@@ -5,9 +5,6 @@
 (use '[clojure.java.shell :only [sh]])
 (import 'java.lang.Runtime)
 
-(def color {:f-base "FFFFFF" :b-base "111111" :none "00" :transparent "90" :mid "C4" :opaque "E9"})
-(def bat {:cap "/sys/class/power_supply/BAT0/capacity" :status "/sys/class/power_supply/BAT0/status" :threshold 25})
-
 (defn remove-back-to-back [lst item]
   (defn helper [lst item prev]
     (if (empty? lst)
@@ -25,17 +22,12 @@
   (:out 
    (apply sh (str/split cmd #"\s"))))
 
-(defn focus [input color]
-  (if (= input true)
-    (str "%{F#" (color :opaque) (color :f-base) "}%{B#" (color :opaque) (color :b-base) "}")
-    (if (= input false) ;normal unfocused
-      (str "%{F#" (color :mid) (color :f-base) "}%{B#" (color :transparent) (color :b-base) "}")
-      (if (= input "urgent")
-        "something"
-        (if (= input "none")
-          (str "%{F#" (color :none) (color :f-base) "}%{B#" (color :none) (color :b-base) "}")
-          (if (= input "dimmed") ;lowest focus
-            (str "%{F#" (color :transparent) (color :f-base) "}%{B#" (color :transparent) (color :b-base) "}")))))))
+(defn focus [color]
+  {  :true (str "%{F#" (color :opaque) (color :f-base) "}%{B#" (color :opaque) (color :b-base) "}")
+     :false (str "%{F#" (color :mid) (color :f-base) "}%{B#" (color :transparent) (color :b-base) "}")
+     :urgent "something"
+     :none (str "%{F#" (color :none) (color :f-base) "}%{B#" (color :none) (color :b-base) "}")
+     :dimmed (str "%{F#" (color :transparent) (color :f-base) "}%{B#" (color :transparent) (color :b-base) "}")})
 
 (defn makebuttons [message actions buttons]
   ;%{A1:action:}%{A3:action:}...%{A}%{A}
@@ -56,10 +48,7 @@
 (defn getwm []
   (second
    (str/split
-    (first
-     (str/split
-      (exec "wmctrl -m")
-      #"\n"))
+    (first (str/split (exec "wmctrl -m") #"\n"))
     #"\s")))
 
 
@@ -78,52 +67,44 @@
 (defn getwindows [desktop wm] ;desktop is one line of the output of wmctrl -d
   (:out
    (sh "xdotool" "search" "--desktop" ;"$HOME/.scripts/window/act.sh" "--getwindowsfordesktop"
-       (nth desktop 0) ;xdotool counts from 0, so it doesn't vary by WM; otherwise getindex would be better
-       "" ;xdotool only
-       )))
+       (nth desktop 0) "" )))
+       ;xdotool counts from 0, so it doesn't vary by WM; otherwise getindex would be better. the "" is xdotool only
 
-(defn isactive? [desktop]
+
+(defn isactive? [desktop] ; only works one at a time in CWM
   (= "*" (nth desktop 1)))
 
 (defn haswindows? [desktop wm] ;causing problems
   (not (str/blank? (getwindows desktop wm))))
 
 (defn getname [desktop wm]
-  (if (= wm "bspwm")
-    (nth desktop 8)
-    (if (= wm "CWM")
-      (nth desktop 9)
-      "undetermined")))
-   
+  (case wm
+    "bspwm" (nth desktop 8)
+    "CWM" (nth desktop 9)
+    nil))
 
-
-(defn makedesktopbutton [d wm color]
+(defn makedesktopbutton [d wm foci]
   (def index (getindex d wm))
   (str
-   (focus 
-    (if (isactive? d) true (if (haswindows? d wm) false "dimmed")) color)
+    ((if (isactive? d) :true (if (haswindows? d wm) :false :dimmed)) foci)
    (makebuttons
     (str " " (getname d wm) " ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh --capturefocuscapture " index) (str "$HOME/.scripts/window/act.sh --showthumbnail " index)) (list 3 1 6))))
 
 
-(defn desktops [wm color]
-  (def dlist
-    (if (= wm "CWM")
-      (drop 1 (map #(makedesktopbutton % wm color) (getdesktoplist)))
-      (map #(makedesktopbutton % wm color) (getdesktoplist))))
+(defn desktops [wm foci]
   (makebuttons
-   (str/join dlist)
+   (str/join (drop (if (= wm "CWM") 1 0) (map #(makedesktopbutton % wm foci) (getdesktoplist))))
    '("$HOME/.scripts/window/act.sh --capturefocuscapture next" "$HOME/.scripts/window/act.sh --capturefocuscapture prev") '(4 5)))
 
 (defn date [] (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
 
-(defn battery [info color]
+(defn battery [info foci]
   (if (and (.exists (io/file (info :cap))) (.exists (io/file (info :status))))
      (if (= "Charging" (str/trim-newline (slurp (info :status))))
-       (str (focus false color) " " (str/trim-newline (slurp (info :cap))) "%" " - charging")
+       (str (:false foci) " " (str/trim-newline (slurp (info :cap))) "%" " - charging")
        (str (if (< (read-string (str/trim-newline (slurp (info :cap)))) (info :threshold))
-              (focus true color)
-              (focus false color))
+              (:true foci)
+              (:false foci))
             " " (str/trim-newline (slurp (info :cap))) "% "))
      "" ))
 
@@ -133,30 +114,26 @@
 
 
 
-
+(def color {:f-base "FFFFFF" :b-base "111111" :none "00" :transparent "90" :mid "C4" :opaque "E9"})
+(def bat {:cap "/sys/class/power_supply/BAT0/capacity" :status "/sys/class/power_supply/BAT0/status" :threshold 25})
+(def foci (focus color))
 (def wm (getwm))
-(def d (atom (desktops wm color)))
-(def m (atom (music)))
-(def b (atom (battery bat color)))
-(def t (atom (date)))
 
+(def atoms {:d (atom (desktops wm foci)) :m (atom (music)) :b (atom (battery bat foci)) :t (atom (date))})
 
-(future (while true (Thread/sleep 100) (reset! d (desktops wm color))))
-(future (while true (Thread/sleep 500) (reset! m (music))))
-(future (while true (Thread/sleep 5000) (reset! b (battery bat color))))
-(future (while true  (Thread/sleep 1000) (reset! t (date))))
+(future (while true (Thread/sleep 100) (reset! (atoms :d) (desktops wm foci))))
+(future (while true (Thread/sleep 500) (reset! (atoms :m) (music))))
+(future (while true (Thread/sleep 5000) (reset! (atoms :b) (battery bat foci))))
+(future (while true  (Thread/sleep 1000) (reset! (atoms :t) (date))))
 
-(defn spew [color]
+(defn spew [foci]
   (println
-   (focus false color) "%{l}  " @d
-   (focus false color) "%{c}" @m
-   "%{r}" @b (focus false color) " " @t  "  "))
-
+   (foci :false) "%{l}  " @(atoms :d)
+   (foci :false) "%{c}" @(atoms :m)
+   "%{r}" @(atoms :b) (foci :false) " " @(atoms :t)  "  "))
 
 (while true
   (Thread/sleep 100)
-  (spew color))
+  (spew foci))
 
-
-  
 (shutdown-agents) ;without this it hangs
