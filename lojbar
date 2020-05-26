@@ -60,8 +60,8 @@
 
 (defn getindex [desktop wm]
   (if (= wm "CWM")
-    (str (nth desktop 0)))
-    (str (+ (read-string (str (nth desktop 0))) 1)))
+    (str (read-string (nth desktop 0)))
+    (str (+ (read-string (str (nth desktop 0))) 1))))
 
 
 (defn getwindows [desktop wm] ;desktop is one line of the output of wmctrl -d
