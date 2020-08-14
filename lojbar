@@ -79,6 +79,7 @@
 
 (defn getname [desktop wm]
   (case wm
+    "awesome" (nth desktop 8)
     "bspwm" (nth desktop 8)
     "CWM" (nth desktop 9)
     nil))
