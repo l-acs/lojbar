@@ -41,7 +41,7 @@
    (makebuttons "  <  " '("mpc prev" "mpc seek 0") (list 1 3))
    (makebuttons
     (first (str/split (exec "mpc current") #"\n"))
-    '("mpc toggle" "urxvt -e ncmpcpp -s lyrics &" "mpc volume +5" "mpc volume -5") (list 1 3 4 5))
+    '("mpc toggle" "mpc sendmessage mpdas love" "urxvt -e ncmpcpp -s lyrics &" "mpc volume +5" "mpc volume -5") (list 1 2 3 4 5))
    (makebuttons "  >  " '("mpc next" "mpc next") (list 1 3))))
 
 
