@@ -118,7 +118,8 @@
 (defn brightness [info foci]
   (if (and (.exists (io/file (:current info))) (.exists (io/file (:max info))))
     (str (:false foci)
-         (makebuttons (str "Bright: "  (int (* 100 (float (apply / (map #(read-string (slurp  (info (first %)))) info))))) "%") (list "brightnessctl set 15-" "brightnessctl set +15") (list 4 5)))))
+         (makebuttons (str "Bright: "  (int (* 100 (float (apply / (map #(read-string (slurp  (info (first %)))) info))))) "%") (list "brightnessctl set 15-" "brightnessctl set +15") (list 4 5)))
+    ""))
   
 
 
