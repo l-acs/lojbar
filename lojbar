@@ -2,6 +2,7 @@
 ; -*-Clojure-*-
 (require '[clojure.string :as str])
 (require '[clojure.java.io :as io])
+(require '[clojure.edn :as edn])
 (use '[clojure.java.shell :only [sh]])
 (import 'java.lang.Runtime)
 
@@ -122,12 +123,12 @@
     ""))
   
 
-
-(def color {:f-base "FFFFFF" :b-base "111111" :none "00" :transparent "90" :mid "C4" :opaque "E9"})
-(def bat {:cap "/sys/class/power_supply/BAT0/capacity" :status "/sys/class/power_supply/BAT0/status" :threshold 25})
-(def bright {:current "/sys/class/backlight/intel_backlight/brightness" :max "/sys/class/backlight/intel_backlight/max_brightness"})
-(def foci (focus color))
 (def wm (getwm))
+(def config (-> ".config/lojbar/config.edn" slurp edn/read-string))
+
+(def foci (focus (:color config)))
+(def bat (:bat config))
+(def bright (:bright config))
 
 (def atoms
   {:d (atom (desktops wm foci))
