@@ -32,19 +32,20 @@
 
 (defn makebuttons [message actions buttons]
   ;%{A1:action:}%{A3:action:}...%{A}%{A}
-  (if (empty? actions)
-    message
-    (makebuttons (str "%{A" (first buttons) ":" (first actions) ":}" message "%{A}") (rest actions) (rest buttons))))
+  (let [buttons (flatten buttons)]
+    (if (empty? actions)
+      message
+      (makebuttons (str "%{A" (first buttons) ":" (first actions) ":}" message "%{A}") (rest actions) (rest buttons)))))
 
 
-(defn music [server]
+(defn music [server scroll]
   (let [serverprefix (if server (str "ssh " server " ") "")
         affix (fn [x] (map #(str serverprefix % " &") x)) ]
     (str
      (makebuttons "  <  " (affix '("mpc prev" "mpc seek 0")) (list 1 3))
      (makebuttons
       (first (str/split (exec (str serverprefix "mpc current")) #"\n"))
-      (affix '("mpc toggle" "mpc sendmessage mpdas love" "urxvt -e ncmpcpp -s lyrics &" "mpc volume +5" "mpc volume -5")) (list 1 2 3 4 5))
+      (affix '("mpc toggle" "mpc sendmessage mpdas love" "urxvt -e ncmpcpp -s lyrics" "mpc volume +5" "mpc volume -5")) (list 1 2 3 scroll))
      (makebuttons "  >  " (affix '("mpc next" "mpc next")) (list 1 3)))))
 
 
@@ -86,10 +87,10 @@
       (str " " (getname d wm) " ") (list (str "$HOME/.scripts/window/act.sh -s " index) (str "$HOME/.scripts/window/act.sh --capturefocuscapture " index) (str "$HOME/.scripts/window/act.sh --showthumbnail " index)) (list 3 1 6)))))
 
 
-(defn desktops [wm foci]
+(defn desktops [wm foci scroll]
   (makebuttons
    (str/join (drop (if (= wm "CWM") 1 0) (map #(makedesktopbutton % wm foci) (getdesktoplist))))
-   '("$HOME/.scripts/window/act.sh --capturefocuscapture next" "$HOME/.scripts/window/act.sh --capturefocuscapture prev") '(4 5)))
+   '("$HOME/.scripts/window/act.sh --capturefocuscapture next" "$HOME/.scripts/window/act.sh --capturefocuscapture prev") scroll))
 
 (defn date [] (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
 
@@ -101,16 +102,15 @@
         (-> current (< (info :threshold)) str keyword foci (str " " current "%"))))   ""))
 
 
-(defn volume [foci]
+(defn volume [foci scroll]
   (str (:false foci)
-       (makebuttons (first (str/split-lines (exec "volume query"))) (list "volume +" "volume -" "volume toggle" "volume mute") (list 4 5 1 3))))
+       (makebuttons (first (str/split-lines (exec "volume query"))) (list "volume +" "volume -" "volume toggle" "volume mute") (list scroll 1 3))))
 
 
-(defn brightness [info foci]
+(defn brightness [info foci scroll]
   (if (reduce #(and %1 %2) (map #(-> % info io/file .exists) '(:current :max)))
     (makebuttons (str "Bright: "  (->> (map #(-> % first info slurp read-string) info) (apply /) float (* 100) int) "%") 
-      (list "brightnessctl set 10-" "brightnessctl set +10")  (list 4 5))  ""))
- 
+      (list "brightnessctl set +10" "brightnessctl set 10-")  scroll)  ""))
 
 (def wm (getwm))
 (def config (-> ".config/lojbar/config.edn" slurp edn/read-string))
@@ -119,19 +119,20 @@
 (def bat (:bat config))
 (def bright (:bright config))
 (def server (:server config))
+(def scroll (if (:natural-scrolling config) '(5 4) '(4 5)))
 
 (def atoms
-  {:d (atom (desktops wm foci))
-   :m (atom (music server))
-   :v (atom (volume foci))
+  {:d (atom (desktops wm foci scroll))
+   :m (atom (music server scroll))
+   :v (atom (volume foci scroll))
    :b (atom (battery bat foci))
    :t (atom (date))
-   :br (atom (brightness bright foci)) })
+   :br (atom (brightness bright foci scroll)) })
 
-(future (while true (Thread/sleep 100) (reset! (atoms :d) (desktops wm foci))))
-(future (while true (Thread/sleep 500) (reset! (atoms :m) (music server))))
-(future (while true (Thread/sleep 500) (reset! (atoms :v) (volume foci))))
-(future (while true (Thread/sleep 500) (reset! (atoms :br) (brightness bright foci))))
+(future (while true (Thread/sleep 100) (reset! (atoms :d) (desktops wm foci scroll))))
+(future (while true (Thread/sleep 500) (reset! (atoms :m) (music server scroll))))
+(future (while true (Thread/sleep 500) (reset! (atoms :v) (volume foci scroll))))
+(future (while true (Thread/sleep 500) (reset! (atoms :br) (brightness bright foci scroll))))
 (future (while true (Thread/sleep 5000) (reset! (atoms :b) (battery bat foci))))
 (future (while true (Thread/sleep 1000) (reset! (atoms :t) (date))))
 
