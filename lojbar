@@ -92,7 +92,7 @@
    (str/join (drop (if (= wm "CWM") 1 0) (map #(makedesktopbutton % wm foci) (getdesktoplist))))
    '("$HOME/.scripts/window/act.sh --capturefocuscapture next" "$HOME/.scripts/window/act.sh --capturefocuscapture prev") scroll))
 
-(defn date [] (nth (str/split (:out (sh "date" "+%a, %b %-d %Y - %-I:%M%P")) #"\n") 0))
+(defn date [format] (nth (str/split (:out (sh "date" format)) #"\n") 0))
 
 (defn battery [info foci] 
   (if (reduce #(and %1 %2) (map #(-> % info io/file .exists) '(:cap :status)))
@@ -120,13 +120,14 @@
 (def bright (:bright config))
 (def server (:server config))
 (def scroll (if (:natural-scrolling config) '(5 4) '(4 5)))
+(def date-format (:date-format config))
 
 (def atoms
   {:d (atom (desktops wm foci scroll))
    :m (atom (music server scroll))
    :v (atom (volume foci scroll))
    :b (atom (battery bat foci))
-   :t (atom (date))
+   :t (atom (date date-format))
    :br (atom (brightness bright foci scroll)) })
 
 (future (while true (Thread/sleep 100) (reset! (atoms :d) (desktops wm foci scroll))))
@@ -134,7 +135,7 @@
 (future (while true (Thread/sleep 500) (reset! (atoms :v) (volume foci scroll))))
 (future (while true (Thread/sleep 500) (reset! (atoms :br) (brightness bright foci scroll))))
 (future (while true (Thread/sleep 5000) (reset! (atoms :b) (battery bat foci))))
-(future (while true (Thread/sleep 1000) (reset! (atoms :t) (date))))
+(future (while true (Thread/sleep 1000) (reset! (atoms :t) (date date-format))))
 
 (defn spew [foci]
   (println

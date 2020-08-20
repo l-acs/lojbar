@@ -4,4 +4,5 @@
  :bright {:current "/sys/class/backlight/intel_backlight/brightness" :max "/sys/class/backlight/intel_backlight/max_brightness"}
  :server nil
  :natural-scrolling false
+ :date-format "+%a, %b %-d %Y - %-I:%M%P"
  }
