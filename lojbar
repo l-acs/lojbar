@@ -6,18 +6,10 @@
 (use '[clojure.java.shell :only [sh]])
 (import 'java.lang.Runtime)
 
-(defn remove-back-to-back [lst item]
-  (defn helper [lst item prev]
-    (if (empty? lst)
-      '()
-      (if (= prev (first lst) item)
-        (helper (rest lst) item item)
-        (cons (first lst) (helper (rest lst) item (first lst))))))
-  (helper lst item ""))
+(defn add-elem-if-not-chr-dup [[lst chr] elem] [(if (= elem (first lst) chr) lst (cons elem lst)) chr])
 
 (defn squeeze [string chr] ;for parsing text alignment of wmctrl output, mostly
-  (str/join 
-   (remove-back-to-back (str/split string #"") chr)))
+  (str/join (reverse (first (reduce add-elem-if-not-chr-dup ['() chr] (str/split string #""))))))
 
 (defn exec [cmd]
   (:out 
