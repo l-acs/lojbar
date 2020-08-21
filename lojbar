@@ -11,9 +11,8 @@
 (defn squeeze [string chr] ;for parsing text alignment of wmctrl output, mostly
   (str/join (reverse (first (reduce add-elem-if-not-chr-dup ['() chr] (str/split string #""))))))
 
-(defn exec [cmd]
-  (:out 
-   (apply sh (str/split cmd #"\s"))))
+(defn exec [arg & args] ; passes a command, and optionally arguments, to `sh`
+  (:out (sh "sh" "-c" (str/join " " (flatten (list arg args))))))
 
 (defn focus [color]
   {  :true (str "%{F#" (color :opaque) (color :f-base) "}%{B#" (color :opaque) (color :b-base) "}")
@@ -56,7 +55,7 @@
 
 
 (defn getwindows [desktop wm] ;desktop is one line of the output of wmctrl -d
-  (:out (sh "xdotool" "search" "--desktop" (nth desktop 0) "" )))
+  (exec "xdotool search --desktop" (nth desktop 0) "\"\"" ))
 
 (defn isactive? [desktop] ; only works one at a time in CWM
   (= "*" (nth desktop 1)))
