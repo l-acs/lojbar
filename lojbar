@@ -93,12 +93,11 @@
         (-> current (< (info :threshold)) str keyword foci (str " " current "%"))))   ""))
 
 
-(defn volume [foci scroll]
-  (str (:false foci)
-       (makebuttons (first (str/split-lines (exec "volume query"))) (list "volume +" "volume -" "volume toggle" "volume mute") (list scroll 1 3))))
+(defn volume [scroll]
+  (makebuttons (first (str/split-lines (exec "volume query"))) (list "volume +" "volume -" "volume toggle" "volume mute") (list scroll 1 3)))
 
 
-(defn brightness [info foci scroll]
+(defn brightness [info scroll]
   (if (reduce #(and %1 %2) (map #(-> % info io/file .exists) '(:current :max)))
     (makebuttons (str "Bright: "  (->> (map #(-> % first info slurp read-string) info) (apply /) float (* 100) int) "%") 
       (list "brightnessctl set +10" "brightnessctl set 10-")  scroll)  ""))
@@ -116,15 +115,15 @@
 (def atoms
   {:d (atom (desktops wm foci scroll))
    :m (atom (music server scroll))
-   :v (atom (volume foci scroll))
+   :v (atom (volume scroll))
    :b (atom (battery bat foci))
    :t (atom (date date-format))
-   :br (atom (brightness bright foci scroll)) })
+   :br (atom (brightness bright scroll)) })
 
 (future (while true (Thread/sleep 100) (reset! (atoms :d) (desktops wm foci scroll))))
 (future (while true (Thread/sleep 500) (reset! (atoms :m) (music server scroll))))
-(future (while true (Thread/sleep 500) (reset! (atoms :v) (volume foci scroll))))
-(future (while true (Thread/sleep 500) (reset! (atoms :br) (brightness bright foci scroll))))
+(future (while true (Thread/sleep 500) (reset! (atoms :v) (volume scroll))))
+(future (while true (Thread/sleep 500) (reset! (atoms :br) (brightness bright scroll))))
 (future (while true (Thread/sleep 5000) (reset! (atoms :b) (battery bat foci))))
 (future (while true (Thread/sleep 1000) (reset! (atoms :t) (date date-format))))
 
