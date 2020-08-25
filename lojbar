@@ -33,11 +33,11 @@
   (let [serverprefix (if server (str "ssh " server " ") "")
         affix (fn [x] (map #(str serverprefix % " &") x)) ]
     (str
-     (makebuttons "  <  " (affix '("mpc prev" "mpc seek 0")) (list 1 3))
+     (makebuttons "  \uf104 " (affix '("mpc prev" "mpc seek 0")) (list 1 3))
      (makebuttons
       (first (str/split (exec (str serverprefix "mpc current")) #"\n"))
       (affix '("mpc toggle" "mpc sendmessage mpdas love" "urxvt -e ncmpcpp -s lyrics" "mpc volume +5" "mpc volume -5")) (list 1 2 3 scroll))
-     (makebuttons "  >  " (affix '("mpc next" "mpc next")) (list 1 3)))))
+     (makebuttons " \uf105  " (affix '("mpc next" "mpc next")) (list 1 3)))))
 
 
 (defn getwm []
@@ -85,12 +85,15 @@
 
 (defn date [format] (nth (str/split (:out (sh "date" format)) #"\n") 0))
 
-(defn battery [info foci] 
+(defn bat-emoji-format [bat] ; f244 f243 f242 f241 f240
+  (->> bat (+ 5) (* 1/25) int (- 4)  (+ 62016) Character/toChars (apply str)))
+
+(defn battery [info foci]
   (if (reduce #(and %1 %2) (map #(-> % info io/file .exists) '(:cap :status)))
     (let [current (-> info :cap slurp str/trim-newline read-string)]
       (if (-> info :status  slurp str/trim-newline (= "Charging"))
-        (str (:false foci) " " current "% - charging")
-        (-> current (< (info :threshold)) str keyword foci (str " " current "%"))))   ""))
+        (str (:false foci) " \uf5e7: " current "%")
+        (-> current (< (info :threshold)) str keyword foci (str (bat-emoji-format current) ": " current "%"))))   ""))
 
 
 (defn volume [scroll]
@@ -99,7 +102,7 @@
 
 (defn brightness [info scroll]
   (if (reduce #(and %1 %2) (map #(-> % info io/file .exists) '(:current :max)))
-    (makebuttons (str "Bright: "  (->> (map #(-> % first info slurp read-string) info) (apply /) float (* 100) int) "%") 
+    (makebuttons (str "\uf185: "  (->> (map #(-> % first info slurp read-string) info) (apply /) float (* 100) int) "%") 
       (list "brightnessctl set +10" "brightnessctl set 10-")  scroll)  ""))
 
 (def wm (getwm))
@@ -131,7 +134,7 @@
   (println
    (foci :false) "%{l}  " @(atoms :d)
    (foci :false) "%{c}" @(atoms :m) @(atoms :v)
-   "%{r}" @(atoms :b) "   " (foci :false) @(atoms :br) " " @(atoms :t)  "  "))
+   "%{r}" @(atoms :b) (foci :false) @(atoms :br) " " @(atoms :t)  "  "))
 
 (while true
   (Thread/sleep 100)
