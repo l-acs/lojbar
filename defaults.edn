@@ -1,6 +1,6 @@
 {
  :color {:f-base "FFFFFF" :b-base "111111" :none "00" :transparent "90" :mid "C4" :opaque "E9"}
- :bat {:cap "/sys/class/power_supply/BAT0/capacity" :status "/sys/class/power_supply/BAT0/status" :threshold 25}
+ :bat {:cap "/sys/class/power_supply/BAT0/capacity" :status "/sys/class/power_supply/BAT0/status" :threshold 25 :sections 4 :offset 10}
  :bright {:current "/sys/class/backlight/intel_backlight/brightness" :max "/sys/class/backlight/intel_backlight/max_brightness"}
  :server nil
  :natural-scrolling false
