@@ -133,15 +133,6 @@
         (take-while  #(pos? (.length %))
               (repeatedly #(.readLine rdr))))))))
 
-;; (defn store-func-in-atom-on-cmd-update [a call & args]
-;;   (let [proc (.exec (Runtime/getRuntime) (into-array args))]
-;;     (with-open [rdr (BufferedReader. (InputStreamReader. (.getInputStream proc)))]
-;;       (loop []
-;;         (let [line (.readLine rdr)]
-;;           (when (pos? (.length line))
-;;             (reset! a (eval call))
-;;             (recur)))))))
-
 (defn run-on-atom-change [a func]
   (add-watch a :watcher
     (fn [key atom old-state new-state] (eval func))))
@@ -175,6 +166,3 @@
    "%{r}" @(atoms :b) (foci :false) @(atoms :br) " " @(atoms :t)  "  "))
 
 (doseq [[_ a] atoms] (run-on-atom-change a '(spew foci))) ; update the bar whenever a module updates
-(while true (spew foci) (Thread/sleep 10010000)) ;fails without this, somehow
-
-(shutdown-agents) ;without this it hangs
