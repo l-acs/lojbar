@@ -119,7 +119,7 @@
     (makebuttons (str "\uf185: "  (->> (map #(-> % first info slurp read-string) info) (apply /) float (* 100) int) "%") 
       {:up "brightnessctl set +10" :down "brightnessctl set 10-"} ref) ""))
 
-(defn store-cmd-in-atom [a & args]
+(defn store-cmd-in-atom! [a & args]
   (let [proc (.exec (Runtime/getRuntime) (into-array args))]
     (with-open [rdr (BufferedReader. (InputStreamReader. (.getInputStream proc)))]
       (dorun
@@ -149,10 +149,9 @@
 
 
 (future (if (= wm "bspwm")
-    (store-cmd-in-atom (atoms :d) "bspc" "subscribe")
-    (while true (Thread/sleep 100) (reset! (atoms :d) (desktops wm foci button-ref)))))  
-
-(future (store-cmd-in-atom (atoms :v) "pactl" "subscribe"))
+    (store-cmd-in-atom! (atoms :d) "bspc" "subscribe")
+    (update-atom-at-interval! (atoms :d) '(desktops wm foci button-ref))))
+(future (store-cmd-in-atom! (atoms :v) "pactl" "subscribe")) 
 (dorun (map #(future (update-atom-at-interval! (atoms %2) %1 %3)) '(500 500 5000 1000) '(:m :br :b :t) (list '(music server button-ref) '(brightness bright button-ref) '(battery bat foci) '(date date-format)))) ; set update times and function calls for each polling module
 
 (defn spew [foci]
