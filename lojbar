@@ -131,6 +131,8 @@
   (add-watch a :watcher
     (fn [key atom old-state new-state] (eval func))))
 
+(defn update-atom-at-interval! [a time func]
+  (while true (Thread/sleep time) (reset! a (eval func))))
 
 (def wm (getwm))
 (def config (-> ".config/lojbar/config.edn" slurp edn/read-string))
@@ -151,8 +153,7 @@
     (while true (Thread/sleep 100) (reset! (atoms :d) (desktops wm foci button-ref)))))  
 
 (future (store-cmd-in-atom (atoms :v) "pactl" "subscribe"))
-
-(dorun (map #(future (while true (Thread/sleep %1) (reset! (atoms %2) (eval %3)))) '(500 500 5000 1000) '(:m :br :b :t) (list '(music server button-ref) '(brightness bright button-ref) '(battery bat foci) '(date date-format)))) ; set update times and function calls for each polling module
+(dorun (map #(future (update-atom-at-interval! (atoms %2) %1 %3)) '(500 500 5000 1000) '(:m :br :b :t) (list '(music server button-ref) '(brightness bright button-ref) '(battery bat foci) '(date date-format)))) ; set update times and function calls for each polling module
 
 (defn spew [foci]
   (println
