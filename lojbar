@@ -95,7 +95,7 @@
     (str
      (makebuttons "  \uf104 " (affix {:left "mpc prev" :right "mpc seek 0"}) ref)
      (makebuttons
-      (first (str/split-lines (exec (str serverprefix "mpc current"))))
+      (first (str/split-lines (exec (str serverprefix "mpc current | sed 's/[[(].*\\([Aa]coustic\\|[Ll]ive\\|[Mm]aster\\|[Vv]ersion\\|[Ee]dit\\|[Mm]ix\\).*[])]//g'"))))
       (affix {:left "mpc toggle" :middle "mpc sendmessage mpdas love" :right "urxvt -e ncmpcpp -s lyrics" :up "mpc volume +5" :down "mpc volume -5"}) ref)
      (makebuttons " \uf105  " (affix {:left "mpc next"}) ref)))) 
 
