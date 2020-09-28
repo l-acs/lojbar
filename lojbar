@@ -56,7 +56,8 @@
    (makebuttons
     (str/join
      (map-indexed #(bspwm-makedesktopbutton (+ 1 %1) %2 foci ref) (bspwm-getdesktoplist output)))
-    {:up "$HOME/.scripts/window/act.sh --capturefocuscapture next" :down "$HOME/.scripts/window/act.sh --capturefocuscapture prev"} ref)
+    {:up "bspc desktop -f next.local.occupied" 
+     :down "bspc desktop -f prev.local.occupied" } ref)
    (bspwm-nulldesktopbutton foci ref)))
 
 (defn add-elem-if-not-chr-dup [[lst chr] elem] [(if (= elem (first lst) chr) lst (cons elem lst)) chr])
