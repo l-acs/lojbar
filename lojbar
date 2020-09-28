@@ -46,9 +46,9 @@
 
 (defn bspwm-nulldesktopbutton [foci ref]
   (str (:false foci) " "
-       (makebuttons  "" ;(apply str (Character/toChars 2205))
-                    {:left "bspc desktop -f next.local.!occupied"
-                     :right "bspc node -d next.local.!occupied"}
+       (makebuttons  ""
+                    {:left "bspc desktop -f next.!occupied"
+                     :right "bspc node -d next.!occupied"}
                     ref)))
 
 (defn bspwm-desktops [output foci ref]
