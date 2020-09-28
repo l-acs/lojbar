@@ -35,10 +35,14 @@
   (-> s (str/split #"")  rest str/join))
 
 (defn bspwm-makedesktopbutton [index d foci ref]
-  (str
-     ((if (bspwm-desktop-isactive? d) :true (if (bspwm-desktop-haswindows? d) :false :dimmed)) foci)
-     (makebuttons
-      (str " " (bspwm-desktop-getname d) " ") {:right (str "$HOME/.scripts/window/act.sh -s " index) :left (str "$HOME/.scripts/window/act.sh --capturefocuscapture " index) :in (str "$HOME/.scripts/window/act.sh --showthumbnail " index)} ref)))
+  (let [haswindows? (bspwm-desktop-haswindows? d)
+        isactive? (bspwm-desktop-isactive? d)]
+    (if (and (not haswindows?) (not isactive?))
+      ""
+      (str
+       (-> isactive? some? str keyword foci)
+       (makebuttons
+        (str " " (bspwm-desktop-getname d) " ") {:right (str "$HOME/.scripts/window/act.sh -s " index) :left (str "$HOME/.scripts/window/act.sh --capturefocuscapture " index) :in (str "$HOME/.scripts/window/act.sh --showthumbnail " index)} ref)))))
 
 (defn bspwm-desktops [output foci ref]
   (makebuttons
