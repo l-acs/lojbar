@@ -44,10 +44,20 @@
        (makebuttons
         (str " " (bspwm-desktop-getname d) " ") {:right (str "$HOME/.scripts/window/act.sh -s " index) :left (str "$HOME/.scripts/window/act.sh --capturefocuscapture " index) :in (str "$HOME/.scripts/window/act.sh --showthumbnail " index)} ref)))))
 
+(defn bspwm-nulldesktopbutton [foci ref]
+  (str (:false foci) " "
+       (makebuttons  "" ;(apply str (Character/toChars 2205))
+                    {:left "bspc desktop -f next.local.!occupied"
+                     :right "bspc node -d next.local.!occupied"}
+                    ref)))
+
 (defn bspwm-desktops [output foci ref]
-  (makebuttons
-   (str/join (map-indexed #(bspwm-makedesktopbutton (+ 1 %1) %2 foci ref) (bspwm-getdesktoplist output)))
-   {:up "$HOME/.scripts/window/act.sh --capturefocuscapture next" :down "$HOME/.scripts/window/act.sh --capturefocuscapture prev"} ref))
+  (str
+   (makebuttons
+    (str/join
+     (map-indexed #(bspwm-makedesktopbutton (+ 1 %1) %2 foci ref) (bspwm-getdesktoplist output)))
+    {:up "$HOME/.scripts/window/act.sh --capturefocuscapture next" :down "$HOME/.scripts/window/act.sh --capturefocuscapture prev"} ref)
+   (bspwm-nulldesktopbutton foci ref)))
 
 (defn add-elem-if-not-chr-dup [[lst chr] elem] [(if (= elem (first lst) chr) lst (cons elem lst)) chr])
 
