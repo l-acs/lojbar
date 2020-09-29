@@ -1,12 +1,14 @@
 #!/bin/clojure
 ; -*-Clojure-*-
-(require '[clojure.string :as str])
-(require '[clojure.java.io :as io])
-(require '[clojure.edn :as edn])
+(require  '[clojure.string :as str]
+          '[clojure.java.io :as io]
+          '[clojure.edn :as edn])
+
 (use '[clojure.java.shell :only [sh]])
-(import 'java.lang.Runtime)
-(import 'java.io.BufferedReader)
-(import 'java.io.InputStreamReader)
+
+(import 'java.lang.Runtime
+        'java.io.BufferedReader
+        'java.io.InputStreamReader)
 
 (defn exec [arg & args] ; passes a command, and optionally arguments, to `sh`
   (:out (sh "sh" "-c" (str/join " " (flatten (list arg args))))))
