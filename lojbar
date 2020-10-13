@@ -77,35 +77,36 @@
   (let [x (-> desktop (nth 0) read-string)]
     (str (if (= wm "CWM") x (+ x 1)))))
 
-(defn getwindows [desktop wm] ;desktop is one line of the output of wmctrl -d
+(defn getwindows [desktop] ;desktop is one line of the output of wmctrl -d
   (exec "xdotool search --desktop" (nth desktop 0) "\"\"" ))
 
 (defn isactive? [desktop] ; only works one at a time in CWM
   (= "*" (nth desktop 1)))
 
-(defn haswindows? [desktop wm] ;causing problems
-  (not (str/blank? (getwindows desktop wm))))
+(defn haswindows? [desktop cfg] ;causing problems
+  (not (str/blank? (getwindows desktop (:wm cfg)))))
 
-(defn getname [desktop wm]
-  (case wm
+(defn getname [desktop cfg]
+  (case (:wm cfg)
     ("awesome" "bspwm") (nth desktop 8)
     "CWM" (nth desktop 9)
     nil))
 
-(defn makedesktopbutton [d wm foci ref]
-  (let [index (getindex d wm)]
+(defn makedesktopbutton [d cfg foci ref]
+  (let [index (getindex d (:wm cfg))]
     (str
-     ((if (isactive? d) :true (if (haswindows? d wm) :false :dimmed)) foci)
+     ((if (isactive? d) :true (if (haswindows? d cfg) :false :dimmed)) foci)
      (makebuttons
-      (str " " (getname d wm) " ") {:right (str "$HOME/.scripts/window/act.sh -s " index) :left (str "$HOME/.scripts/window/act.sh --capturefocuscapture " index) :in (str "$HOME/.scripts/window/act.sh --showthumbnail " index)} ref))))
+      (str " " (getname d cfg) " ") {:right (str "$HOME/.scripts/window/act.sh -s " index) :left (str "$HOME/.scripts/window/act.sh --capturefocuscapture " index) :in (str "$HOME/.scripts/window/act.sh --showthumbnail " index)} ref))))
 
-(defn desktops [wm foci ref]
+(defn desktops [cfg foci ref]
+  (let [wm (:wm cfg)]
   (makebuttons
    (str/join (drop (if (= wm "CWM") 1 0) (map #(makedesktopbutton % wm foci ref) (getdesktoplist))))
-   {:up "$HOME/.scripts/window/act.sh --capturefocuscapture next" :down "$HOME/.scripts/window/act.sh --capturefocuscapture prev"} ref))
+   {:up "$HOME/.scripts/window/act.sh --capturefocuscapture next" :down "$HOME/.scripts/window/act.sh --capturefocuscapture prev"} ref)))
 
-(defn music [server ref]
-  (let [serverprefix (if server (str "ssh " server " ") "")
+(defn music [cfg ref]
+  (let [serverprefix (if (:server cfg) (str "ssh " (:server cfg) " ") "")
         affix #(into {} (map (fn [[k v]] [k (str serverprefix v " &")]) %)) ]
     (str
      (makebuttons "  \uf104 " (affix {:left "mpc prev" :right "mpc seek 0"}) ref)
@@ -114,25 +115,27 @@
       (affix {:left "mpc toggle" :middle "urxvt -e ncmpcpp -s lyrics" :right "mpc sendmessage mpdas love" :up "mpc volume +5" :down "mpc volume -5"}) ref)
      (makebuttons " \uf105  " (affix {:left "mpc next"}) ref)))) 
 
-(defn date [format] (nth (str/split (:out (sh "date" format)) #"\n") 0))
+(defn date [cfg] (nth (str/split (:out (sh "date" (:date-format cfg))) #"\n") 0))
 
 (defn bat-emoji-format [bat offset section-count] ; f244 f243 f242 f241 f240
   (->> bat (+ 24 (- offset)) (* (/ section-count 100)) int (- 4)  (+ 62016) Character/toChars (apply str))) ; offset of 0 means empty is 0, 1/4 is 1-25, 1/2 is 26-50, 3/4 is 51-75, full is 76-100 where section-count is 4
 
-(defn battery [info foci]
-  (if (reduce #(and %1 %2) (map #(-> % info io/file .exists) '(:cap :status)))
-    (let [current (-> info :cap slurp str/trim-newline read-string)]
-      (if (-> info :status  slurp str/trim-newline (= "Charging"))
-        (str (:false foci) " \uf5e7: " current "%")
-        (-> current (< (info :threshold)) str keyword foci (str (bat-emoji-format current (info :offset) (info :sections)) ": " current "%"))))   ""))
+(defn battery [cfg foci]
+  (let [info (:bat cfg)]
+    (if (reduce #(and %1 %2) (map #(-> % info io/file .exists) '(:cap :status)))
+      (let [current (-> info :cap slurp str/trim-newline read-string)]
+        (if (-> info :status  slurp str/trim-newline (= "Charging"))
+          (str (:false foci) " \uf5e7: " current "%")
+          (-> current (< (info :threshold)) str keyword foci (str (bat-emoji-format current (info :offset) (info :sections)) ": " current "%"))))   "")))
 
 (defn volume [ref]
   (makebuttons (str " " (first (str/split-lines (exec "volume query"))) " ") {:up "volume +" :down "volume -" :left "volume toggle" :right "volume mute"} ref))
 
-(defn brightness [info ref]
-  (if (reduce #(and %1 %2) (map #(-> % info io/file .exists) '(:current :max)))
-    (makebuttons (str "\uf185: "  (->> (map #(-> % first info slurp read-string) info) (apply /) float (* 100) int) "%") 
-      {:up "brightnessctl set +10" :down "brightnessctl set 10-"} ref) ""))
+(defn brightness [cfg ref]
+  (let [info (:bright cfg)]
+    (if (reduce #(and %1 %2) (map #(-> % info io/file .exists) '(:current :max)))
+      (makebuttons (str "\uf185: "  (->> (map #(-> % first info slurp read-string) info) (apply /) float (* 100) int) "%") 
+                   {:up "brightnessctl set +10" :down "brightnessctl set 10-"} ref) "")))
 
 (defn store-cmd-in-atom! [a & args]
   (let [proc (.exec (Runtime/getRuntime) (into-array args))]
@@ -149,31 +152,27 @@
 (defn update-atom-at-interval! [a time func]
   (while true (Thread/sleep time) (reset! a (eval func))))
 
-(def wm (getwm))
-(def config (-> ".config/lojbar/config.edn" slurp edn/read-string))
+(def config (-> ".config/lojbar/config.edn" slurp edn/read-string (assoc :wm (getwm))))
 
 (def foci (focus (:color config)))
-(def bat (:bat config))
-(def bright (:bright config))
-(def server (:server config))
 (def button-ref {:left 1 :middle 2 :right 3 :up (if (:natural-scrolling config) 5 4) :down (if (:natural-scrolling config) 4 5) :in 6 :out 7})
 (def scroll (if (:natural-scrolling config) '(5 4) '(4 5)))
-(def date-format (:date-format config))
 
 (def atoms (into {} (map (fn [k] [k (atom "")]) '(:d :v :m :b :t :br))))
 
 
-(future (if (= wm "bspwm")
+(future (if (= (:wm config) "bspwm")
     (store-cmd-in-atom! (atoms :d) "bspc" "subscribe")
-    (update-atom-at-interval! (atoms :d) 100 '(desktops wm foci button-ref))))
+    (update-atom-at-interval! (atoms :d) 100 '(desktops (:wm config) foci button-ref))))
 
 (future (store-cmd-in-atom! (atoms :v) "pactl" "subscribe")) 
-(dorun (map #(future (update-atom-at-interval! (atoms %2) %1 %3)) '(500 500 5000 1000) '(:m :br :b :t) (list '(music server button-ref) '(brightness bright button-ref) '(battery bat foci) '(date date-format)))) ; set update times and function calls for each polling module
+(dorun (map #(future (update-atom-at-interval! (atoms %2) %1 %3)) '(500 500 5000 1000) '(:m :br :b :t) (list '(music config button-ref) '(brightness config button-ref) '(battery config foci) '(date config)))) ; set update times and function calls for each polling module
 
 (defn spew [foci]
   (println
-   (foci :false) "%{l}  " (if (= wm "bspwm") (bspwm-desktops @(atoms :d) foci button-ref) @(atoms :d))
+   (foci :false) "%{l}  " (if (= (:wm config) "bspwm") (bspwm-desktops @(atoms :d) foci button-ref) @(atoms :d))
    (foci :false) "%{c}" @(atoms :m) (volume button-ref)
    "%{r}" @(atoms :b) (foci :false) @(atoms :br) " " @(atoms :t)  "  "))
+
 
 (doseq [[_ a] atoms] (run-on-atom-change a '(spew foci))) ; update the bar whenever a module updates
