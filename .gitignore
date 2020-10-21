@@ -3,3 +3,6 @@
 .nrepl-port
 .cpcache/*
 testing/*
+.hgignore
+.lein-repl-history
+test/

@@ -1,0 +1,150 @@
+{
+ :invert-scrolling false
+
+ :output :lemonbar  ;; available: :lemonbar, :json
+ :fg-default "#90FFFFFF"
+ :bg-default "#C9111111"
+
+ :fg-bold "#FFFFFFFF"
+ :bg-bold "#FF000000"
+
+ :modules {
+           :spec {
+                  ;; color
+                  :fg "#somecolor" ;; not implemented
+                  :bg "#somecolor" ;; not implemented
+
+                  ;; text to emit on click:
+                  :buttons {
+                            :left nil
+                            :right nil
+                            :middle nil
+                            :in nil
+                            :out nil
+                            :up nil
+                            :down nil
+                            }
+
+                  ;; what, if anything, to check for when to update. can be a command (wrapped in backticks) or a file (beginning with a /)
+                  :watch nil
+
+                  ;; what to display on update: can be a command (wrapped in backticks), clojure code (wrapped in parens), or a file (beginning with a /)
+                  :output nil
+
+                  ;; if :watch is nil, how often will the output be updated? if nil, it will not update. syntax is 10s, 0.5s, 1m, 2h, etc
+                  :update-interval nil
+                  }
+
+
+
+
+           :battery {
+                     :watch "`upower --monitor`"
+                     :output "(lojbar.custom/bat-emoji 10 4)"
+                     }
+
+           :blank {
+                   :output " "
+                   }
+
+
+           :brightness {
+                        :update-interval "0.5s"
+
+                        :buttons {
+                                  :up "brightnessctl set +10000"
+                                  :down "brightnessctl set 10000-"
+                                  }
+                        
+                        :output "`echo -e '\uf185':$(brightnessctl i | grep -Eo '[[:digit:]]?[[:digit:]][[:digit:]]%')`"
+
+                        }
+           
+
+           :date {
+                  :output "`date \"+%a, %b %-d - %-I:%M%P\"`"
+                  :update-interval "5s"
+                  
+                  }
+
+          
+
+           :music {
+                   :watch "/home/user/.scripts/output/cover.jpg"
+
+                   ;; rewrite in clojure, probably
+                   :output "`ssh l-acs@192.168.0.144 mpc current -f '%title%' | sed -e 's/[[(].*\\([Aa]coustic\\|[Ll]ive\\|[Ff]eat\\|[Mm]aster\\|[Vv]ersion\\|[Ee]dit\\|[Mm]ix\\).*[])]//g' | head -c 30`" 
+                   ;; todo: change whether playing or pause
+                   ;; do I want to include the playing song name? or what about an animation?
+                   ;; unslashed: f8cf
+                   ;; slashed: f8d0
+                   
+                   :buttons {
+                             :in "reload-cover-ssh"
+                             :out "dunstctl close"
+                             :left "ssh l-acs@192.168.0.144 mpc toggle &"
+                             :right "ssh l-acs@192.168.0.144 mpc sendmessage mpdas love &"
+                             :up "ssh l-acs@192.168.0.144 mpc volume +5 &"
+                             :down "ssh l-acs@192.168.0.144 mpc volume -5 &"
+
+                             }
+                   }
+
+
+           :null-desktop {
+
+                          :output ""
+                          :buttons {
+                                    :left "bspc desktop -f next.local.!occupied"
+                                    :right "bspc node -d next.local.!occupied"
+                                    }
+                          }
+          
+
+
+           :volume {
+                    :watch "`pactl subscribe`"
+                    :output "`volume query`"
+
+                    :buttons {
+                              :up "volume +"
+                              :down "volume -"
+                              }
+
+                    }
+           
+           :workspaces {
+                        :watch "`bspc subscribe`"
+                        :buttons {
+                                  :up "bspc config pointer_follows_focus false; bspc desktop -f next.local.occupied; bspc config pointer_follows_focus true "
+                                  :down "bspc config pointer_follows_focus false; bspc desktop -f prev.local.occupied; bspc config pointer_follows_focus true "
+                                  }
+
+                        :output "(lojbar.custom/show-desktops (lojbar.handler/exec \"bspc subscribe -c 1\") {:left \" \" :right \" \" :joiner \"\"} lojbar.format/default-color lojbar.format/bold-color)"
+                        }
+           }
+
+ :format {
+          ;; any keywords are interpreted as modules;
+          ;; todo: text inserted as is 
+
+          :left [
+                 :blank
+                 :workspaces
+                 :null-desktop
+                 ]
+
+          :center [
+                   :music :volume
+                   ]
+
+          :right [
+                  :battery
+;;                  :blank
+                  :brightness
+                  :blank
+                  :date
+                  :blank
+                  ]
+          }
+}
