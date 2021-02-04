@@ -96,7 +96,7 @@
                           :output ""
                           :buttons {
                                     :left "bspc desktop -f next.local.!occupied"
-                                    :right "bspc node -d next.local.!occupied"
+                                    :right "bspc config pointer_follows_focus false ; bspc node -d next.local.!occupied ; bspc config pointer_follows_focus true"
                                     }
                           }
           

@@ -42,12 +42,12 @@
 
 (defn desktop-button [desktop padding normal-color focus-color index]
   (when-let [d (desktop-format-str desktop padding normal-color focus-color)]
-    (format/make-buttons-lemonbar
-     d
-     {:left (str "bspc config pointer_follows_focus false; $HOME/.scripts/window/act.sh --capturefocuscapture " index " ; bspc config pointer_follows_focus true ")
-      :right (str "$HOME/.scripts/window/act.sh -s " index)
-      :in (str "$HOME/.scripts/window/act.sh --showthumbnail " index)})))
-
+    (let [name (get-name desktop)]
+      (format/make-buttons-lemonbar
+       d
+       {:left (str "bspc config pointer_follows_focus false; $HOME/.scripts/window/act.sh --capturefocuscapture " name " ; bspc config pointer_follows_focus true ")
+        :right (str "$HOME/.scripts/window/act.sh -s " name)
+        :in (str "$HOME/.scripts/window/act.sh --showthumbnail " index)}))))
 
 (defn show-desktops 
   [output padding normal-color focus-color]
