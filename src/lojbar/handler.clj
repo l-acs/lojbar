@@ -20,11 +20,12 @@
 
 (defn determine-content-type
   [s]
-  (case (str (first s))
-    "(" :clojure
-    "`" :command
-    "/" :file
-    :text))
+  (if (= (type s) java.lang.String)
+    (case (str (first s))
+      "`" :command
+      "/" :file
+      :text)
+    :clojure))
 
 (defn strip-cmd [cmd]
   (str/replace cmd #"(`$|^`)" ""))
@@ -32,6 +33,6 @@
 (defn output-handler [output]
   (case (determine-content-type output)
     :text output
-    :clojure (-> output read-string eval)
+    :clojure (-> output eval)
     :command (-> output strip-cmd exec)
     :file (slurp output)))

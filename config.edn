@@ -40,7 +40,7 @@
 
            :battery {
                      :watch "`upower --monitor`"
-                     :output "(lojbar.custom/bat-emoji 10 4)"
+                     :output (lojbar.custom/bat-emoji 10 4)
                      }
 
            :blank {
@@ -161,7 +161,7 @@
                                   :down "bspc config pointer_follows_focus false; bspc desktop -f prev.local.occupied; bspc config pointer_follows_focus true "
                                   }
 
-                        :output "(lojbar.custom/show-desktops (lojbar.handler/exec \"bspc subscribe -c 1\") {:left \" \" :right \" \" :joiner \"\"} lojbar.format/default-color lojbar.format/bold-color)"
+                        :output (lojbar.custom/show-desktops (lojbar.handler/exec "bspc subscribe -c 1") {:left " " :right " " :joiner ""} lojbar.format/default-color lojbar.format/bold-color)
                         }
            }
 
