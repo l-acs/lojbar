@@ -2,11 +2,11 @@
  :invert-scrolling false
 
  :output :lemonbar  ;; available: :lemonbar, :json
- :fg-default "#90FFFFFF"
- :bg-default "#C9111111"
+ :fg-default "#a0FFFFFF"
+ :bg-default "#00111111" ;; "#C9111111"
 
  :fg-bold "#FFFFFFFF"
- :bg-bold "#FF000000"
+ :bg-bold "#9F000000"
 
  :modules {
            :spec {
@@ -52,11 +52,11 @@
                         :update-interval "0.5s"
 
                         :buttons {
-                                  :up "brightnessctl set +10000"
-                                  :down "brightnessctl set 10000-"
+                                  :up "brightnessctl set +5% --exponent=1.5"
+                                  :down "brightnessctl set 5%- --exponent=1.5"
                                   }
                         
-                        :output "`echo -e '\uf185':$(brightnessctl i | grep -Eo '[[:digit:]]?[[:digit:]][[:digit:]]%')`"
+                        :output "`echo -e '\uf185':$(brightnessctl info --exponent=1.5 | grep -Eo '[[:digit:]]?[[:digit:]][[:digit:]]%')`"
 
                         }
            
@@ -70,22 +70,21 @@
           
 
            :music {
-                   :watch "/home/user/.scripts/output/cover.jpg"
+                   ;; :watch "`mpc idleloop`"
+                   :output ""
+                   ;; "`if [ \"$(mpc status | sed -e '/^[^[].*[^]]$/d' -e 's/].*/]/' )\" = \"[playing]\" ]; then mpc current -f '%title%' | sed -e 's/[[(].*\\([Aa]coustic\\|[Ll]ive\\|[Ff]eat\\|[Mm]aster\\|[Vv]ersion\\|[Ee]dit\\|[Mm]ix\\).*[])]//g' | head -c 30; else echo ; fi`"
 
-                   ;; rewrite in clojure, probably
-                   :output "`ssh l-acs@192.168.0.144 mpc current -f '%title%' | sed -e 's/[[(].*\\([Aa]coustic\\|[Ll]ive\\|[Ff]eat\\|[Mm]aster\\|[Vv]ersion\\|[Ee]dit\\|[Mm]ix\\).*[])]//g' | head -c 30`" 
-                   ;; todo: change whether playing or pause
                    ;; do I want to include the playing song name? or what about an animation?
                    ;; unslashed: f8cf
                    ;; slashed: f8d0
                    
                    :buttons {
-                             :in "reload-cover-ssh"
-                             :out "dunstctl close"
-                             :left "ssh l-acs@192.168.0.144 mpc toggle &"
-                             :right "ssh l-acs@192.168.0.144 mpc sendmessage mpdas love &"
-                             :up "ssh l-acs@192.168.0.144 mpc volume +5 &"
-                             :down "ssh l-acs@192.168.0.144 mpc volume -5 &"
+                             :in "reload-cover &"
+                             :out "dunstctl close &"
+                             :left "mpc toggle"
+                             :right "mpc sendmessage mpdas love"
+                             :up "mpc volume +2"
+                             :down "mpc volume -2"
 
                              }
                    }
@@ -107,8 +106,8 @@
                     :output "`volume query`"
 
                     :buttons {
-                              :up "volume +"
-                              :down "volume -"
+                              :up "pactl set-sink-volume @DEFAULT_SINK@ +600"
+                              :down "pactl set-sink-volume @DEFAULT_SINK@ -600"
                               }
 
                     }
@@ -135,7 +134,8 @@
                  ]
 
           :center [
-                   :music :volume
+                   :music
+                   :volume
                    ]
 
           :right [
