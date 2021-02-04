@@ -47,6 +47,16 @@
                    :output " "
                    }
 
+           :bluetooth {
+                       :output (if (lojbar.custom/is-focused?) "" "  ")
+                       :update-interval "0.3s"
+                       ;; todo display status visibly or something
+
+                       :buttons {
+                                 :left "bluetoothctl power on && bluetoothctl connect $(bluetoothctl devices | cut -f2 -d' ' | head -n 1)"
+                                 :right "bluetoothctl disconnect $(bluetoothctl devices | cut -f2 -d' ' | head -n 1) && power off"
+                                 }
+                       }
 
            :brightness {
                         :update-interval "0.5s"
@@ -54,6 +64,8 @@
                         :buttons {
                                   :up "brightnessctl set +5% --exponent=1.5"
                                   :down "brightnessctl set 5%- --exponent=1.5"
+                                  :left "pkill redshift || redshift -c ~/.config/redshift.conf &"
+                                  :right "pkill picom || picom -b"
                                   }
                         
                         :output "`echo -e '\uf185':$(brightnessctl info --exponent=1.5 | grep -Eo '[[:digit:]]?[[:digit:]][[:digit:]]%')`"
@@ -83,11 +95,28 @@
                              :out "dunstctl close &"
                              :left "mpc toggle"
                              :right "mpc sendmessage mpdas love"
+                             :middle "bspc config pointer_follows_focus false; findoropen -t ncmpcpp ; bspc config pointer_follows_focus true"
                              :up "mpc volume +2"
                              :down "mpc volume -2"
 
                              }
                    }
+
+           :music-left {
+                        :output "<"
+                        :buttons {
+                                  :left "mpc prev"
+                                  :right "mpc seek 0"
+                                  }
+                        }
+
+           :music-right {
+                         :output ">"
+                         :buttons {
+                                   :left "mpc next"
+                                   :right "mpc random"
+                                   }
+                         }
 
 
            :null-desktop {
@@ -99,6 +128,17 @@
                                     }
                           }
           
+           :run {
+                 ;; TODO: let multiple modules use the same output, or something
+
+                 :output (if (lojbar.custom/is-focused?) "Launch..." "")
+                 :update-interval "0.3s"
+                 :buttons {
+                           :left "bspc config pointer_follows_focus false; rofi -show combi -combi-modi \"window,drun\" ; bspc config pointer_follows_focus true"
+                           :middle "bar"
+                           :right "bspc config pointer_follows_focus false ; findoropen xournalpp ; bspc config pointer_follows_focus true"
+                           }
+                 }
 
 
            :volume {
@@ -108,6 +148,8 @@
                     :buttons {
                               :up "pactl set-sink-volume @DEFAULT_SINK@ +600"
                               :down "pactl set-sink-volume @DEFAULT_SINK@ -600"
+                              :left "volume toggle"
+                              :right "volume mute"
                               }
 
                     }
@@ -134,13 +176,17 @@
                  ]
 
           :center [
+                   :bluetooth
+                   :music-left
                    :music
+                   :music-right
                    :volume
                    ]
 
           :right [
                   :battery
 ;;                  :blank
+                  :run
                   :brightness
                   :blank
                   :date

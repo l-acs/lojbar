@@ -55,3 +55,9 @@
        get-desktop-list
        (keep-indexed #(desktop-button %2 padding normal-color focus-color (+ %1 1)))
        (str/join (:joiner padding))))
+
+(defn cmd-success? [cmd & args]
+  (= 0 (:exit (apply clojure.java.shell/sh cmd args))))
+
+(defn is-focused? []
+  (cmd-success? "/home/user/.scripts/window/isapplication" "bar"))
