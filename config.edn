@@ -79,6 +79,23 @@
                   
                   }
 
+           :emacs {
+                     :output ""
+                     :buttons {
+                               :left "( bspc config pointer_follows_focus false; ( findoropen emacs ; ( pgrep emacsclient || eval $VISUAL & ) ) ; sleep 1 ;  bspc config pointer_follows_focus true ) &"
+                               :right "bspc config pointer_follows_focus false; pkill -x emacsclient && bspc config pointer_follows_focus true &"
+                               }
+                     }
+
+
+           :firefox {
+                     :output ""
+                     :buttons {
+                               :left "bspc config pointer_follows_focus false; findoropen firefox ; sleep 1 && bspc config pointer_follows_focus true &"
+                               :right "bspc config pointer_follows_focus false; pkill firefox ; sleep 1 && bspc config pointer_follows_focus true &"
+                               }
+                     }
+
           
 
            :music {
@@ -127,19 +144,61 @@
                                     :right "bspc config pointer_follows_focus false ; bspc node -d next.local.!occupied ; bspc config pointer_follows_focus true"
                                     }
                           }
-          
+
+           :pomo {
+                  :output
+                  (if (lojbar.custom/is-focused?)
+                    (lojbar.handler/exec ;; space pad the time to match the pomo name length
+                     "echo \"  $(pomo-time.sh name | sed -e 's/.*/ /g' -e 's/     $//')$(pomo-time.sh)  \"")
+
+                    (lojbar.handler/exec "pomo-time.sh name"))
+                  :update-interval "1s"
+
+                  :buttons {
+                            :left "pgrep -x pomo || pomo & disown"
+                            :middle "pgrep -x pomo || pomo 5 break & disown"
+                            :right "pkill -x pomo"
+                            }
+
+
+
+
+                  }
+
+
+
+
+
+
+
            :run {
                  ;; TODO: let multiple modules use the same output, or something
 
                  :output (if (lojbar.custom/is-focused?) "Launch..." "")
                  :update-interval "0.3s"
                  :buttons {
-                           :left "bspc config pointer_follows_focus false; rofi -show combi -combi-modi \"window,drun\" ; bspc config pointer_follows_focus true"
+                           :left "bspc config pointer_follows_focus false; rofi -show combi -combi-modi \"window,drun\" && bspc config pointer_follows_focus true &"
                            :middle "bar"
-                           :right "bspc config pointer_follows_focus false ; findoropen xournalpp ; bspc config pointer_follows_focus true"
+                           :right "bspc config pointer_follows_focus false ; findoropen xournalpp && bspc config pointer_follows_focus true &"
                            }
                  }
 
+           :signal {
+                     :output ""
+                     :buttons {
+                               :left "bspc config pointer_follows_focus false; findoropen signal signal-desktop && bspc config pointer_follows_focus true &"
+                               :right "bspc config pointer_follows_focus false; pkill -f signal && bspc config pointer_follows_focus true &"
+                               }
+                     }
+
+
+           :thunderbird {
+                     :output ""
+                     :buttons {
+                               :left "bspc config pointer_follows_focus false; findoropen thunderbird ; sleep 1 && bspc config pointer_follows_focus true &"
+                               :right "bspc config pointer_follows_focus false; pkill -f thunderbird ; sleep 1 && bspc config pointer_follows_focus true &"
+                               }
+                     }
 
            :volume {
                     :watch "`pactl subscribe`"
@@ -171,12 +230,16 @@
 
           :left [
                  :blank
-                 :workspaces
+                 :thunderbird
+                 :firefox
+                 :emacs
+                 :signal
                  :null-desktop
+                 :blank
+                 :workspaces
                  ]
 
           :center [
-                   :bluetooth
                    :music-left
                    :music
                    :music-right
@@ -184,11 +247,15 @@
                    ]
 
           :right [
-                  :battery
-;;                  :blank
                   :run
+                  :blank
+                  :bluetooth
+                  :blank
                   :brightness
                   :blank
+                  :battery
+                  :blank
+                  :pomo
                   :date
                   :blank
                   ]
